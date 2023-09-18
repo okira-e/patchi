@@ -10,10 +10,16 @@ import (
 )
 
 var RmConnectionCmd = &cobra.Command{
-	Use:   "remove-connection",
+	Use:   "rm-connection",
 	Short: "Removes a connection from the config file.",
 	Long:  "Removes a stored database connection from the config file.",
 	Run: func(cmd *cobra.Command, args []string) {
+		_, errOpt := config.GetUserConfig()
+		if errOpt.IsSome() {
+			logger.PrintInColor(colors.Red, "Config file not found. Run `patchi init` to create one.")
+			return
+		}
+
 		namePrmpt := promptui.Prompt{
 			Label: "Connection name",
 			Validate: func(s string) error {
@@ -30,7 +36,7 @@ var RmConnectionCmd = &cobra.Command{
 			return
 		}
 
-		errOpt := config.RmConnection(connectionName)
+		errOpt = config.RmConnection(connectionName)
 		if errOpt.IsSome() {
 			logger.PrintInColor(colors.Red, errOpt.Unwrap().Error())
 			return

@@ -12,7 +12,13 @@ var AddConnectionCmd = &cobra.Command{
 	Short: "Add a new connection.",
 	Long:  `Add a new database connection to the config file.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		errOpt := config.AddConnection()
+		_, errOpt := config.GetUserConfig()
+		if errOpt.IsSome() {
+			logger.PrintInColor(colors.Red, "Config file not found. Run `patchi init` to create one.")
+			return
+		}
+
+		errOpt = config.AddConnection()
 		if errOpt.IsSome() {
 			logger.PrintInColor(colors.Red, errOpt.Unwrap().Error())
 		}
