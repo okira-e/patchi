@@ -1,16 +1,15 @@
 package cmd
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/Okira-E/patchi/pkg/config"
 	"github.com/Okira-E/patchi/pkg/datasource"
-	"github.com/Okira-E/patchi/pkg/safego"
-	"github.com/Okira-E/patchi/pkg/types"
-	"github.com/Okira-E/patchi/pkg/utils/logger"
+	"github.com/Okira-E/patchi/pkg/tui"
+	"github.com/Okira-E/patchi/pkg/utils"
 	"github.com/Okira-E/patchi/pkg/vars/colors"
-	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
-	"log"
-	"sort"
 )
 
 var StartCmd = &cobra.Command{
@@ -23,90 +22,59 @@ migrating database environments.
 	Run: func(cmd *cobra.Command, args []string) {
 		userConfig, errOpt := config.GetUserConfig()
 		if errOpt.IsSome() {
-			logger.PrintInColor(colors.Red, errOpt.Unwrap().Error())
+			utils.PrintInColor(colors.Red, errOpt.Unwrap().Error())
 
 			return
 		}
 
-		firstDbConnectionInfo, secondDbConnectionInfo, errMsgOpt := promptForDbConnections(userConfig)
+		firstDbConnectionName, secondDbConnectionName, errMsgOpt := utils.PromptForDbConnections(userConfig)
 		if errMsgOpt.IsSome() {
-			logger.PrintInColor(colors.Red, errMsgOpt.Unwrap())
+			utils.PrintInColor(colors.Red, errMsgOpt.Unwrap())
 
 			return
 		}
 
-		firstDbConnection, errOpt := datasource.GetDataSource(userConfig.DbConnections[firstDbConnectionInfo])
+		firstDbConnection, errOpt := datasource.GetDataSource(userConfig.DbConnections[firstDbConnectionName])
 		if errOpt.IsSome() {
-			log.Panicf("Error connecting to %s: %s", firstDbConnectionInfo, errOpt.Unwrap())
+			log.Fatalf("Error connecting to %s: %s", firstDbConnectionName, errOpt.Unwrap())
 		}
-		defer firstDbConnection.Close()
+		defer func() {
+			err := firstDbConnection.Close()
+			if err != nil {
+				log.Fatalf("Error closing connection to %s: %s", firstDbConnectionName, err)
+			}
+		}()
 
-		secondDbConnection, errOpt := datasource.GetDataSource(userConfig.DbConnections[secondDbConnectionInfo])
+		secondDbConnection, errOpt := datasource.GetDataSource(userConfig.DbConnections[secondDbConnectionName])
 		if errOpt.IsSome() {
-			log.Panicf("Error connecting to %s: %s", secondDbConnectionInfo, errOpt.Unwrap())
+			log.Fatalf("Error connecting to %s: %s", secondDbConnectionName, errOpt.Unwrap())
 		}
-		defer secondDbConnection.Close()
+		defer func() {
+			err := secondDbConnection.Close()
+			if err != nil {
+				log.Fatalf("Error closing connection to %s: %s", secondDbConnectionName, err)
+			}
+		}()
 
-		props := &types.CompareRootRendererProps{
-			FirstDb: types.DbConnection{
-				Info:          userConfig.DbConnections[firstDbConnectionInfo],
+		if err := firstDbConnection.Ping(); err != nil {
+			utils.Abort(fmt.Sprintf("Failed to ping the \"%s\" database", userConfig.DbConnections[firstDbConnectionName].Name))
+		}
+
+		if err := secondDbConnection.Ping(); err != nil {
+			utils.Abort(fmt.Sprintf("Failed to ping the \"%s\" database", userConfig.DbConnections[secondDbConnectionName].Name))
+		}
+
+		params := &tui.HomeParams{
+			FirstDb: tui.DbConnectionInfo{
+				Info:          userConfig.DbConnections[firstDbConnectionName],
 				SqlConnection: firstDbConnection,
 			},
-			SecondDb: types.DbConnection{
-				Info:          userConfig.DbConnections[secondDbConnectionInfo],
+			SecondDb: tui.DbConnectionInfo{
+				Info:          userConfig.DbConnections[secondDbConnectionName],
 				SqlConnection: secondDbConnection,
 			},
 		}
 
-		_ = props
+		tui.GlobalRenderer(params)
 	},
-}
-
-func promptForDbConnections(userConfig types.UserConfig) (string, string, safego.Option[string]) {
-	logger.PrintInColor(colors.Cyan, "Choose the connections from the list below to compare:")
-
-	allConnectionNames := []string{}
-	for connectionName, _ := range userConfig.DbConnections {
-		allConnectionNames = append(allConnectionNames, connectionName)
-	}
-	// Sort allConnectionNames
-	sort.Strings(allConnectionNames)
-
-	firstConnectionToChoosePrmpt := promptui.Select{
-		Label: "Choose connections",
-		Items: allConnectionNames,
-		Size:  10,
-	}
-	_, firstSelectedConnection, err := firstConnectionToChoosePrmpt.Run()
-	if err != nil {
-		return "", "", safego.Some(err.Error())
-	}
-
-	logger.PrintInColor(colors.Cyan, "Choose the second database (The dialect must be the same as the first one):")
-
-	// Filter out the first selected connection from the list of connections for the second prompt.
-	// Also, filter out the connections that have a different dialect than the first selected connection.
-
-	filteredConnectionNamesForSecondPrompt := []string{}
-	for connectionName, connection := range userConfig.DbConnections {
-		if connectionName != firstSelectedConnection && connection.Dialect == userConfig.DbConnections[firstSelectedConnection].Dialect {
-			filteredConnectionNamesForSecondPrompt = append(filteredConnectionNamesForSecondPrompt, connectionName)
-		}
-	}
-
-	if len(filteredConnectionNamesForSecondPrompt) == 0 {
-		return "", "", safego.Some("no connections with the same dialect remaining")
-	}
-
-	secondSelectedConnectionPrmpt := promptui.Select{
-		Label: "Choose connections",
-		Items: filteredConnectionNamesForSecondPrompt,
-		Size:  10,
-	}
-	_, secondSelectedConnection, err := secondSelectedConnectionPrmpt.Run()
-	if err != nil {
-		return "", "", safego.Some(err.Error())
-	}
-
-	return firstSelectedConnection, secondSelectedConnection, safego.None[string]()
 }

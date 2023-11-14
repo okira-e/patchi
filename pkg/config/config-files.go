@@ -2,11 +2,12 @@ package config
 
 import (
 	"errors"
-	"github.com/Okira-E/patchi/pkg/safego"
-	"github.com/Okira-E/patchi/pkg/types"
-	"github.com/Okira-E/patchi/pkg/utils/json"
+	"github.com/Okira-E/patchi/pkg/utils"
 	"os"
 	"runtime"
+
+	"github.com/Okira-E/patchi/pkg/safego"
+	"github.com/Okira-E/patchi/pkg/types"
 )
 
 // getCOnfigFilePathBasedOnOS returns the config file path based on the OS.
@@ -29,7 +30,6 @@ func getConfigFilePathBasedOnOS() (string, safego.Option[error]) {
 }
 
 // doesConfigFileExists checks if the config file exists.
-// It returns true if the file exists, false otherwise.
 func doesConfigFileExists() (bool, safego.Option[error]) {
 	filePath, errOpt := getConfigFilePathBasedOnOS()
 	if errOpt.IsSome() {
@@ -95,7 +95,7 @@ func GetUserConfig() (types.UserConfig, safego.Option[error]) {
 		return types.UserConfig{}, errOption
 	}
 
-	errOpt := json.ReadJSONFile(filePath, &userConfig)
+	errOpt := utils.ReadJSONFile(filePath, &userConfig)
 	if errOpt.IsSome() {
 		return types.UserConfig{}, errOpt
 	}
@@ -109,7 +109,7 @@ func WriteUserConfig(userConfig types.UserConfig) safego.Option[error] {
 		return errOption
 	}
 
-	errOpt := json.WriteToJSONFile(filePath, userConfig)
+	errOpt := utils.WriteToJSONFile(filePath, userConfig)
 	if errOpt.IsSome() {
 		return errOpt
 	}

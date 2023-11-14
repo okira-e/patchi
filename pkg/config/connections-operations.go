@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"github.com/Okira-E/patchi/pkg/safego"
 	"github.com/Okira-E/patchi/pkg/types"
-	"github.com/Okira-E/patchi/pkg/utils/json"
+	"github.com/Okira-E/patchi/pkg/utils"
 	"github.com/Okira-E/patchi/pkg/vars"
+	"github.com/jedib0t/go-pretty/table"
 	"github.com/manifoldco/promptui"
+	"log"
+	"os"
 	"strconv"
 )
 
-// AddConnection adds a new connection to the config file.
+// AddDbConnection adds a new connection to the config file.
 // It returns an error if the connection already exists.
-func AddConnection() safego.Option[error] {
+func AddDbConnection() safego.Option[error] {
 	userConfig, errOpt := GetUserConfig()
 	if errOpt.IsSome() {
 		return errOpt
@@ -165,7 +168,7 @@ func AddConnection() safego.Option[error] {
 		return errOpt
 	}
 
-	json.WriteToJSONFile(configFilePathBasedOnOs, userConfig)
+	utils.WriteToJSONFile(configFilePathBasedOnOs, userConfig)
 
 	return safego.None[error]()
 }
@@ -189,7 +192,31 @@ func RmConnection(connectionName string) safego.Option[error] {
 	}
 
 	delete(userConfig.DbConnections, connectionName)
-	json.WriteToJSONFile(configFilePathBasedOnOs, userConfig)
+	utils.WriteToJSONFile(configFilePathBasedOnOs, userConfig)
 
 	return safego.None[error]()
+}
+
+// PrintStoredConnections prints all the stored connections in the config file.
+func PrintStoredConnections() {
+	userConfig, errOpt := GetUserConfig()
+	if errOpt.IsSome() {
+		log.Fatalf("Error getting user config: %s", errOpt.Unwrap())
+	}
+
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Connection Name", "Dialect", "Host", "Port", "User", "Password", "Database Name"})
+
+	if len(userConfig.DbConnections) != 0 {
+		for connectionName, connection := range userConfig.DbConnections {
+			maskedPassword := utils.MaskString(connection.Password)
+
+			t.AppendRow([]any{connectionName, connection.Dialect, connection.Host, connection.Port, connection.User, maskedPassword, connection.Database})
+		}
+	} else {
+		t.AppendRow([]any{"No connections stored"})
+	}
+
+	t.Render()
 }

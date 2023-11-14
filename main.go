@@ -10,7 +10,7 @@ func main() {
 	// -- User config setup
 	errOpt := config.SetupUserConfig()
 	if errOpt.IsSome() {
-		log.Panicf("Error setting up user config: %s", errOpt.Unwrap())
+		log.Fatalf("Error setting up user config: %s", errOpt.Unwrap())
 	}
 
 	cmd.Execute()

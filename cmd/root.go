@@ -16,7 +16,7 @@ migrating database environments.
 	Run: func(cmd *cobra.Command, args []string) {
 		err := cmd.Help()
 		if err != nil {
-			log.Panicf("Error printing help: %s", err.Error())
+			log.Fatalf("Error printing help: %s", err.Error())
 		}
 	},
 }
@@ -29,6 +29,6 @@ func Execute() {
 
 	err := rootCmd.Execute()
 	if err != nil {
-		log.Panicf("Error executing root command: %s", err.Error())
+		log.Fatalf("Error executing root command: %s", err.Error())
 	}
 }
