@@ -58,5 +58,43 @@ func GlobalRenderer(params *HomeParams) {
 			homeRenderer.SetShowConfirmation(false)
 			homeRenderer.Render()
 		}
+		if event.Type == termui.KeyboardEvent && ((event.ID == "j") || (event.ID == "<Down>")) {
+			homeRenderer.DiffWidget.ScrollDown()
+			homeRenderer.Render()
+		}
+		if event.Type == termui.KeyboardEvent && ((event.ID == "k") || (event.ID == "<Up>")) {
+			homeRenderer.DiffWidget.ScrollUp()
+			homeRenderer.Render()
+		}
+		if event.Type == termui.KeyboardEvent && (event.ID == "<C-d>") {
+			homeRenderer.DiffWidget.ScrollHalfPageDown()
+			homeRenderer.Render()
+		}
+		if event.Type == termui.KeyboardEvent && (event.ID == "<C-u>") {
+			homeRenderer.DiffWidget.ScrollHalfPageUp()
+			homeRenderer.Render()
+		}
+		if event.Type == termui.KeyboardEvent && (event.ID == "<C-f>") {
+			homeRenderer.DiffWidget.ScrollPageDown()
+			homeRenderer.Render()
+		}
+		if event.Type == termui.KeyboardEvent && (event.ID == "<C-b>") {
+			homeRenderer.DiffWidget.ScrollPageUp()
+			homeRenderer.Render()
+		}
+		if event.Type == termui.KeyboardEvent && (event.ID == "g") {
+			if event.Type == termui.KeyboardEvent && (event.ID == "g") {
+				homeRenderer.DiffWidget.ScrollTop()
+				homeRenderer.Render()
+			}
+		}
+		if event.Type == termui.KeyboardEvent && (event.ID == "<Home>") {
+			homeRenderer.DiffWidget.ScrollTop()
+			homeRenderer.Render()
+		}
+		if event.Type == termui.KeyboardEvent && ((event.ID == "G") || (event.ID == "<End>")) {
+			homeRenderer.DiffWidget.ScrollBottom()
+			homeRenderer.Render()
+		}
 	}
 }

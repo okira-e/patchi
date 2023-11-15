@@ -1,8 +1,7 @@
 package tui
 
 import (
-	"database/sql"
-
+	"fmt"
 	"github.com/Okira-E/patchi/pkg/migration"
 	"github.com/Okira-E/patchi/pkg/safego"
 	"github.com/Okira-E/patchi/pkg/types"
@@ -10,15 +9,9 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 )
 
-// DbConnectionInfo is the connection info for a database.
-type DbConnectionInfo struct {
-	Info          *types.DbConnectionInfo
-	SqlConnection *sql.DB
-}
-
 type HomeParams struct {
-	FirstDb  DbConnectionInfo
-	SecondDb DbConnectionInfo
+	FirstDb  types.DbConnection
+	SecondDb types.DbConnection
 }
 
 // HomeRenderer is a unit that knows about all the widgets that need to be rendered.
@@ -31,7 +24,7 @@ type HomeRenderer struct {
 	TabPaneWidget *widgets.TabPane
 
 	// DiffWidget is the widget that holds the diff of the selected tab.
-	DiffWidget *widgets.Paragraph
+	DiffWidget *widgets.List
 
 	// SqlWidget is the widget that holds the sql formulated from the diff.
 	SqlWidget *widgets.Paragraph
@@ -39,7 +32,6 @@ type HomeRenderer struct {
 	// showConfirmation is a flag that indicates whether the confirmation widget should be shown.
 	showConfirmation bool
 
-	// params is the params passed to the renderer.
 	params *HomeParams
 }
 
@@ -47,11 +39,14 @@ type HomeRenderer struct {
 func NewHomeRenderer(params *HomeParams) *HomeRenderer {
 	homeRenderer := &HomeRenderer{
 		TabPaneWidget:    widgets.NewTabPane("Tables", "Columns", "Views", "Procedures", "Functions", "Triggers"),
-		DiffWidget:       widgets.NewParagraph(),
+		DiffWidget:       widgets.NewList(),
 		SqlWidget:        widgets.NewParagraph(),
 		showConfirmation: true,
 		params:           params,
 	}
+
+	homeRenderer.DiffWidget.TextStyle = termui.NewStyle(termui.ColorYellow)
+	homeRenderer.DiffWidget.WrapText = false
 
 	homeRenderer.SqlWidget.Title = "SQL"
 
@@ -84,10 +79,10 @@ func (self *HomeRenderer) GetShowConfirmation() bool {
 func (self *HomeRenderer) Render() {
 	termui.Clear()
 
-	switch self.TabPaneWidget.ActiveTabIndex {
-	case 0: // Tables
+	if self.TabPaneWidget.ActiveTabIndex == 0 { // Tables
+
 		self.DiffWidget.Title = "Tables"
-		self.DiffWidget.Text = ""
+		self.DiffWidget.Rows = []string{"default"}
 		diffWidgetRec := self.DiffWidget.GetRect()
 
 		// Check if the user has started the comparing process or not yet. Confirmation widget is shown instead
@@ -100,41 +95,49 @@ func (self *HomeRenderer) Render() {
 
 			confirmationWidget.Unwrap().Text = "Press Enter to fetch changes."
 		} else {
-			res := migration.TableDiff(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection)
-			_ = res
+			diff := migration.TableDiff(&self.params.FirstDb, &self.params.SecondDb)
 
-			// self.DiffWidget.Text = res
+			for _, tableDiff := range diff {
+				self.DiffWidget.Rows = append(self.DiffWidget.Rows, fmt.Sprintf("%s (%s)", tableDiff.TableName, tableDiff.DiffType))
+			}
 		}
 
+		// Render the widgets.
 		if confirmationWidget.IsSome() {
 			termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget, confirmationWidget.Unwrap())
 		} else {
 			termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget)
 		}
-	case 1:
-		// Columns
+
+	} else if self.TabPaneWidget.ActiveTabIndex == 1 { // Columns
+
 		self.DiffWidget.Title = "Columns"
-		self.DiffWidget.Text = ""
+		self.DiffWidget.Rows = []string{}
 		termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget)
-	case 2:
-		// Views
+
+	} else if self.TabPaneWidget.ActiveTabIndex == 2 { // Views
+
 		self.DiffWidget.Title = "Views"
-		self.DiffWidget.Text = ""
+		self.DiffWidget.Rows = []string{}
 		termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget)
-	case 3:
-		// Procedures
+
+	} else if self.TabPaneWidget.ActiveTabIndex == 3 { // Procedures
+
 		self.DiffWidget.Title = "Procedures"
-		self.DiffWidget.Text = ""
+		self.DiffWidget.Rows = []string{}
 		termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget)
-	case 4:
-		// Functions
+
+	} else if self.TabPaneWidget.ActiveTabIndex == 4 { // Functions
+
 		self.DiffWidget.Title = "Functions"
-		self.DiffWidget.Text = ""
+		self.DiffWidget.Rows = []string{}
 		termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget)
-	case 5:
-		// Triggers
+
+	} else if self.TabPaneWidget.ActiveTabIndex == 5 { // Triggers
+
 		self.DiffWidget.Title = "Triggers"
-		self.DiffWidget.Text = ""
+		self.DiffWidget.Rows = []string{}
 		termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget)
+
 	}
 }
