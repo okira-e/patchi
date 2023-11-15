@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"github.com/Okira-E/patchi/pkg/config"
-	"github.com/Okira-E/patchi/pkg/datasource"
 	"github.com/Okira-E/patchi/pkg/tui"
+	"github.com/Okira-E/patchi/pkg/types"
 	"github.com/Okira-E/patchi/pkg/utils"
 	"github.com/Okira-E/patchi/pkg/vars/colors"
 	"github.com/spf13/cobra"
@@ -27,50 +27,50 @@ migrating database environments.
 			return
 		}
 
-		firstDbConnectionName, secondDbConnectionName, errMsgOpt := utils.PromptForDbConnections(userConfig)
+		firstDbConnectionInfo, secondDbConnectionInfo, errMsgOpt := utils.PromptForDbConnections(userConfig)
 		if errMsgOpt.IsSome() {
 			utils.PrintInColor(colors.Red, errMsgOpt.Unwrap())
 
 			return
 		}
 
-		firstDbConnection, errOpt := datasource.GetDataSource(userConfig.DbConnections[firstDbConnectionName])
+		firstDbConnection, errOpt := firstDbConnectionInfo.Connect()
 		if errOpt.IsSome() {
-			log.Fatalf("Error connecting to %s: %s", firstDbConnectionName, errOpt.Unwrap())
+			log.Fatalf("Error connecting to %s: %s", firstDbConnectionInfo, errOpt.Unwrap())
 		}
 		defer func() {
 			err := firstDbConnection.Close()
 			if err != nil {
-				log.Fatalf("Error closing connection to %s: %s", firstDbConnectionName, err)
+				log.Fatalf("Error closing connection to %s: %s", firstDbConnectionInfo, err)
 			}
 		}()
 
-		secondDbConnection, errOpt := datasource.GetDataSource(userConfig.DbConnections[secondDbConnectionName])
+		secondDbConnection, errOpt := secondDbConnectionInfo.Connect()
 		if errOpt.IsSome() {
-			log.Fatalf("Error connecting to %s: %s", secondDbConnectionName, errOpt.Unwrap())
+			log.Fatalf("Error connecting to %s: %s", secondDbConnectionInfo, errOpt.Unwrap())
 		}
 		defer func() {
 			err := secondDbConnection.Close()
 			if err != nil {
-				log.Fatalf("Error closing connection to %s: %s", secondDbConnectionName, err)
+				log.Fatalf("Error closing connection to %s: %s", secondDbConnectionInfo, err)
 			}
 		}()
 
 		if err := firstDbConnection.Ping(); err != nil {
-			utils.Abort(fmt.Sprintf("Failed to ping the \"%s\" database", userConfig.DbConnections[firstDbConnectionName].Name))
+			utils.Abort(fmt.Sprintf("Failed to ping the \"%s\" database", firstDbConnectionInfo.Name))
 		}
 
 		if err := secondDbConnection.Ping(); err != nil {
-			utils.Abort(fmt.Sprintf("Failed to ping the \"%s\" database", userConfig.DbConnections[secondDbConnectionName].Name))
+			utils.Abort(fmt.Sprintf("Failed to ping the \"%s\" database", secondDbConnectionInfo.Name))
 		}
 
 		params := &tui.HomeParams{
-			FirstDb: tui.DbConnectionInfo{
-				Info:          userConfig.DbConnections[firstDbConnectionName],
+			FirstDb: types.DbConnection{
+				Info:          firstDbConnectionInfo,
 				SqlConnection: firstDbConnection,
 			},
-			SecondDb: tui.DbConnectionInfo{
-				Info:          userConfig.DbConnections[secondDbConnectionName],
+			SecondDb: types.DbConnection{
+				Info:          secondDbConnectionInfo,
 				SqlConnection: secondDbConnection,
 			},
 		}

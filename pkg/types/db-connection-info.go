@@ -1,7 +1,13 @@
 package types
 
 import (
+	"database/sql"
+	"errors"
 	"strconv"
+
+	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 
 	"github.com/Okira-E/patchi/pkg/safego"
 )
@@ -16,7 +22,7 @@ type DbConnectionInfo struct {
 	Database string `json:"database,omitempty"`
 }
 
-// GetConnectionString retrieves the valid sql connection string for the current dialect. It returns 
+// GetConnectionString retrieves the valid sql connection string for the current dialect. It returns
 // an error if the dialect isn't supported.
 func (self *DbConnectionInfo) GetConnectionString() (string, safego.Option[string]) {
 	if self.Dialect == "mysql" {
@@ -28,4 +34,19 @@ func (self *DbConnectionInfo) GetConnectionString() (string, safego.Option[strin
 	}
 
 	return "", safego.Some[string]("Invalid dialect")
+}
+
+// Connect connects to the database and returns the sql.DB object.
+func (self *DbConnectionInfo) Connect() (*sql.DB, safego.Option[error]) {
+	connStr, errOpt := self.GetConnectionString()
+	if errOpt.IsSome() {
+		return nil, safego.Some(errors.New(errOpt.Unwrap()))
+	}
+
+	db, err := sql.Open(self.Dialect, connStr)
+	if err != nil {
+		return nil, safego.Some(err)
+	}
+
+	return db, safego.None[error]()
 }

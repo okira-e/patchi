@@ -10,7 +10,23 @@ import (
 )
 
 // PromptForDbConnections Prompts the user to choose which two databases to compare against.
-func PromptForDbConnections(userConfig types.UserConfig) (string, string, safego.Option[string]) {
+func PromptForDbConnections(userConfig types.UserConfig) (*types.DbConnectionInfo, *types.DbConnectionInfo, safego.Option[string]) {
+	if len(userConfig.DbConnections) == 0 {
+		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some("no connections found")
+	} else if len(userConfig.DbConnections) == 1 {
+		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some("only one connection found. Please add another connection to compare against")
+	} else if len(userConfig.DbConnections) == 2 { // If there are only 2 connections, just return them.
+		connections := [2]*types.DbConnectionInfo{}
+
+		counter := 0
+		for _, dbConnection := range userConfig.DbConnections {
+			connections[counter] = dbConnection
+			counter++
+		}
+
+		return connections[0], connections[1], safego.None[string]()
+	}
+
 	PrintInColor(colors.Cyan, "Choose the connections from the list below to compare:")
 
 	allConnectionNames := []string{}
@@ -25,25 +41,26 @@ func PromptForDbConnections(userConfig types.UserConfig) (string, string, safego
 		Items: allConnectionNames,
 		Size:  10,
 	}
-	_, firstSelectedConnection, err := firstConnectionToChoosePrmpt.Run()
+	_, firstSelectedConnectionName, err := firstConnectionToChoosePrmpt.Run()
 	if err != nil {
-		return "", "", safego.Some(err.Error())
+		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some(err.Error())
 	}
 
 	PrintInColor(colors.Cyan, "Choose the second database (The dialect must be the same as the first one):")
 
-	// Filter out the first selected connection from the list of connections for the second prompt.
+	// Filter out the first selected connection from the list of connections for the second
+	// prompt (We don't want to compare a database with itself.)
 	// Also, filter out the connections that have a different dialect than the first selected connection.
 
 	filteredConnectionNamesForSecondPrompt := []string{}
 	for connectionName, connection := range userConfig.DbConnections {
-		if connectionName != firstSelectedConnection && connection.Dialect == userConfig.DbConnections[firstSelectedConnection].Dialect {
+		if connectionName != firstSelectedConnectionName && connection.Dialect == userConfig.DbConnections[firstSelectedConnectionName].Dialect {
 			filteredConnectionNamesForSecondPrompt = append(filteredConnectionNamesForSecondPrompt, connectionName)
 		}
 	}
 
 	if len(filteredConnectionNamesForSecondPrompt) == 0 {
-		return "", "", safego.Some("no connections with the same dialect remaining")
+		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some("no connections with the same dialect remaining")
 	}
 
 	secondSelectedConnectionPrmpt := promptui.Select{
@@ -51,10 +68,10 @@ func PromptForDbConnections(userConfig types.UserConfig) (string, string, safego
 		Items: filteredConnectionNamesForSecondPrompt,
 		Size:  10,
 	}
-	_, secondSelectedConnection, err := secondSelectedConnectionPrmpt.Run()
+	_, secondSelectedConnectionName, err := secondSelectedConnectionPrmpt.Run()
 	if err != nil {
-		return "", "", safego.Some(err.Error())
+		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some(err.Error())
 	}
 
-	return firstSelectedConnection, secondSelectedConnection, safego.None[string]()
+	return userConfig.DbConnections[firstSelectedConnectionName], userConfig.DbConnections[secondSelectedConnectionName], safego.None[string]()
 }
