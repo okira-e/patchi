@@ -1,15 +1,15 @@
 package tui
 
 import (
-	"log"
-
+	"fmt"
+	"github.com/Okira-E/patchi/pkg/utils"
 	"github.com/gizak/termui/v3"
 )
 
 // GlobalRenderer starts the TUI for comparing 2 databases.
 func GlobalRenderer(params *HomeParams) {
 	if err := termui.Init(); err != nil {
-		log.Fatalf("failed to initialize termui: %v", err)
+		utils.Abort(fmt.Sprintf("failed to initialize termui: %v", err))
 	}
 	defer termui.Close()
 

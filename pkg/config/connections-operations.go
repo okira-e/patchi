@@ -8,7 +8,6 @@ import (
 	"github.com/Okira-E/patchi/pkg/vars"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/manifoldco/promptui"
-	"log"
 	"os"
 	"strconv"
 )
@@ -201,7 +200,7 @@ func RmConnection(connectionName string) safego.Option[error] {
 func PrintStoredConnections() {
 	userConfig, errOpt := GetUserConfig()
 	if errOpt.IsSome() {
-		log.Fatalf("Error getting user config: %s", errOpt.Unwrap())
+		utils.Abort(fmt.Sprintf("Error getting user config: %s", errOpt.Unwrap()))
 	}
 
 	t := table.NewWriter()

@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/Okira-E/patchi/pkg/config"
 	"github.com/Okira-E/patchi/pkg/tui"
 	"github.com/Okira-E/patchi/pkg/types"
@@ -36,23 +34,23 @@ migrating database environments.
 
 		firstDbConnection, errOpt := firstDbConnectionInfo.Connect()
 		if errOpt.IsSome() {
-			log.Fatalf("Error connecting to %s: %s", firstDbConnectionInfo, errOpt.Unwrap())
+			utils.Abort(fmt.Sprintf("Error connecting to %s: %s", firstDbConnectionInfo, errOpt.Unwrap()))
 		}
 		defer func() {
 			err := firstDbConnection.Close()
 			if err != nil {
-				log.Fatalf("Error closing connection to %s: %s", firstDbConnectionInfo, err)
+				utils.Abort(fmt.Sprintf("Error closing connection to %s: %s", firstDbConnectionInfo, err))
 			}
 		}()
 
 		secondDbConnection, errOpt := secondDbConnectionInfo.Connect()
 		if errOpt.IsSome() {
-			log.Fatalf("Error connecting to %s: %s", secondDbConnectionInfo, errOpt.Unwrap())
+			utils.Abort(fmt.Sprintf("Error connecting to %s: %s", secondDbConnectionInfo, errOpt.Unwrap()))
 		}
 		defer func() {
 			err := secondDbConnection.Close()
 			if err != nil {
-				log.Fatalf("Error closing connection to %s: %s", secondDbConnectionInfo, err)
+				utils.Abort(fmt.Sprintf("Error closing connection to %s: %s", secondDbConnectionInfo, err))
 			}
 		}()
 

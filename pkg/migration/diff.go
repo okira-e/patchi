@@ -2,9 +2,9 @@ package migration
 
 import (
 	"database/sql"
-	"log"
-
+	"fmt"
 	"github.com/Okira-E/patchi/pkg/types"
+	"github.com/Okira-E/patchi/pkg/utils"
 )
 
 // TableDiff represents the tables out of sync between two databases.
@@ -54,7 +54,7 @@ func TableDiff(firstDb *types.DbConnection, secondDb *types.DbConnection) []type
 func getTablesNames(db *sql.DB) []string {
 	rows, err := db.Query("SHOW TABLES")
 	if err != nil {
-		log.Fatalf("Error querying database: %s", err.Error())
+		utils.Abort(fmt.Sprintf("Error querying database: %s", err.Error()))
 	}
 
 	ret := []string{}
@@ -62,7 +62,7 @@ func getTablesNames(db *sql.DB) []string {
 		var table string
 		err := rows.Scan(&table)
 		if err != nil {
-			log.Fatalf("Error scanning row: %s", err.Error())
+			utils.Abort(fmt.Sprintf("Error scanning row: %s", err.Error()))
 		}
 
 		ret = append(ret, table)

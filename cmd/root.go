@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"log"
-
+	"fmt"
+	"github.com/Okira-E/patchi/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +16,7 @@ migrating database environments.
 	Run: func(cmd *cobra.Command, args []string) {
 		err := cmd.Help()
 		if err != nil {
-			log.Fatalf("Error printing help: %s", err.Error())
+			utils.Abort(fmt.Sprintf("Error printing help: %s", err.Error()))
 		}
 	},
 }
@@ -29,6 +29,6 @@ func Execute() {
 
 	err := rootCmd.Execute()
 	if err != nil {
-		log.Fatalf("Error executing root command: %s", err.Error())
+		utils.Abort(fmt.Sprintf("Error executing root command: %s", err.Error()))
 	}
 }
