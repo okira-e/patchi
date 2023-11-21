@@ -2,7 +2,7 @@ package utils
 
 import (
 	"encoding/json"
-	"github.com/Okira-E/patchi/pkg/safego"
+	"github.com/Okira-E/patchi/safego"
 	"os"
 )
 
