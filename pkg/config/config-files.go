@@ -3,10 +3,10 @@ package config
 import (
 	"errors"
 	"github.com/Okira-E/patchi/pkg/utils"
+	"github.com/Okira-E/patchi/safego"
 	"os"
 	"runtime"
 
-	"github.com/Okira-E/patchi/pkg/safego"
 	"github.com/Okira-E/patchi/pkg/types"
 )
 
