@@ -1,3 +1,3 @@
 package vars
 
-var SupportedDatabases = []string{"mysql", "mariadb"}
+var SupportedDatabases = []string{"mysql", "mariadb", "postgres", "cockroachdb"}
