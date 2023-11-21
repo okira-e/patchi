@@ -14,20 +14,31 @@ var RmConnectionCmd = &cobra.Command{
 	Short: "Removes a connection from the config file.",
 	Long:  "Removes a stored database connection from the config file.",
 	Run: func(cmd *cobra.Command, args []string) {
-		namePrmpt := promptui.Prompt{
-			Label: "Connection name",
-			Validate: func(s string) error {
-				if s == "" {
-					return fmt.Errorf("name cannot be empty")
-				}
+		// TODO: Add a way to remove all connections.
+		// TODO: Make removing a connection a selection prompt.
 
-				return nil
-			},
-		}
-		connectionName, err := namePrmpt.Run()
-		if err != nil {
-			utils.PrintInColor(colors.Red, err.Error())
-			return
+		var err error
+		var connectionName string
+
+		if len(args) > 0 {
+			connectionName = args[0]
+		} else {
+			namePrmpt := promptui.Prompt{
+				Label: "Connection name",
+				Validate: func(s string) error {
+					if s == "" {
+						return fmt.Errorf("name cannot be empty")
+					}
+
+					return nil
+				},
+			}
+
+			connectionName, err = namePrmpt.Run()
+			if err != nil {
+				utils.PrintInColor(colors.Red, err.Error())
+				return
+			}
 		}
 
 		errOpt := config.RmConnection(connectionName)

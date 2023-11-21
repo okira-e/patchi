@@ -22,6 +22,8 @@ migrating database environments.
 }
 
 func Execute() {
+	RmConnectionCmd.Flags().String("name", "", "Name of the connection to remove.")
+
 	rootCmd.AddCommand(ListConnectionsCmd)
 	rootCmd.AddCommand(AddConnectionCmd)
 	rootCmd.AddCommand(RmConnectionCmd)
