@@ -9,7 +9,7 @@ func RecreateSqlForTables(firstDb types.DbConnection, secondDb types.DbConnectio
 	var ret string
 
 	if status == "created" {
-		rows, err := firstDb.SqlConnection.Query("SHOW CREATE TABLE " + entityName + ";")
+		rows, err := firstDb.SqlConnection.Query("SHOW CREATE TABLE " + entityName)
 		if err != nil {
 			utils.AbortTui("Error getting create table statement: " + err.Error())
 		}
@@ -20,6 +20,8 @@ func RecreateSqlForTables(firstDb types.DbConnection, secondDb types.DbConnectio
 				utils.AbortTui("Error getting create table statement: " + err.Error())
 			}
 		}
+
+		ret += ";"
 	} else if status == "deleted" {
 		ret = "DROP TABLE IF EXISTS `" + entityName + "`;"
 	} else if status == "modified" {
