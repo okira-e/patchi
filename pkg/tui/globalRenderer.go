@@ -106,7 +106,9 @@ func (self *GlobalRenderer) ClearBorderStyles() {
 }
 
 // Render is responsible for rendering the TUI.
-func (self *GlobalRenderer) Render() {
+//
+// - param `userPrompt` is an optional string that is shown in the message bar.
+func (self *GlobalRenderer) Render(userPrompt safego.Option[string]) {
 	termui.Clear()
 
 	if self.TabPaneWidget.ActiveTabIndex == 0 { // Tables
@@ -139,6 +141,10 @@ func (self *GlobalRenderer) Render() {
 
 				self.DiffWidget.Rows = append(self.DiffWidget.Rows, text)
 			}
+		}
+
+		if userPrompt.IsSome() {
+			self.MessageBarWidget.Text = userPrompt.Unwrap()
 		}
 
 		// Render the widgets.
