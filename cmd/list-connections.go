@@ -6,7 +6,7 @@ import (
 )
 
 var ListConnectionsCmd = &cobra.Command{
-	Use:   "list-connections",
+	Use:   "list",
 	Short: "List all the connections.",
 	Long:  `List all database connections that are stored in the config file.`,
 	Run: func(cmd *cobra.Command, args []string) {

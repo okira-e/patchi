@@ -8,7 +8,7 @@ import (
 )
 
 var AddConnectionCmd = &cobra.Command{
-	Use:   "add-connection",
+	Use:   "add",
 	Short: "Add a new connection.",
 	Long:  `Add a new database connection to the config file.`,
 	Run: func(cmd *cobra.Command, args []string) {

@@ -24,7 +24,6 @@ migrating database environments.
 func Execute() {
 	RmConnectionCmd.Flags().String("name", "", "Name of the connection to remove.")
 
-	// TODO: Simplify command names (e.g. "patchi list" instead of "patchi list-connections")
 	rootCmd.AddCommand(ListConnectionsCmd)
 	rootCmd.AddCommand(AddConnectionCmd)
 	rootCmd.AddCommand(RmConnectionCmd)

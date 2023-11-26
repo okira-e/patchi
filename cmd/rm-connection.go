@@ -10,7 +10,7 @@ import (
 )
 
 var RmConnectionCmd = &cobra.Command{
-	Use:   "rm-connection",
+	Use:   "rm",
 	Short: "Removes a connection from the config file.",
 	Long:  "Removes a stored database connection from the config file.",
 	Run: func(cmd *cobra.Command, args []string) {
