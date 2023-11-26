@@ -8,6 +8,9 @@ import (
 )
 
 // RenderTui is the entry point for rendering the TUI for Patchi.
+// It represents the TUI library and event loop of the application. Actual UI related to the application and its
+// functionality can be found in `globalRenderer.go` which gives this function the widgets to render.
+// Things related to how widgets look and behave can be found in the `globalRenderer.go` file.
 func RenderTui(params *GlobalRendererParams) {
 	if err := termui.Init(); err != nil {
 		utils.Abort(fmt.Sprintf("failed to initialize termui: %v", err))

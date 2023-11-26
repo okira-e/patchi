@@ -66,7 +66,7 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 
 	globalRenderer.SqlWidget.Title = "SQL"
 	globalRenderer.SqlWidget.TextStyle = termui.NewStyle(termui.ColorWhite)
-	globalRenderer.SqlWidget.SelectedRowStyle = termui.NewStyle(termui.ColorBlack, termui.ColorWhite)
+	globalRenderer.SqlWidget.SelectedRowStyle = termui.NewStyle(termui.ColorGreen)
 	globalRenderer.SqlWidget.WrapText = false
 	globalRenderer.SqlWidget.PaddingLeft = 2
 
