@@ -1,9 +1,10 @@
-package utils
+package prompts
 
 import (
+	"github.com/Okira-E/patchi/pkg/utils"
+	"github.com/Okira-E/patchi/safego"
 	"sort"
 
-	"github.com/Okira-E/patchi/pkg/safego"
 	"github.com/Okira-E/patchi/pkg/types"
 	"github.com/Okira-E/patchi/pkg/vars/colors"
 	"github.com/manifoldco/promptui"
@@ -15,19 +16,9 @@ func PromptForDbConnections(userConfig types.UserConfig) (*types.DbConnectionInf
 		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some("no connections found")
 	} else if len(userConfig.DbConnections) == 1 {
 		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some("only one connection found. Please add another connection to compare against")
-	} else if len(userConfig.DbConnections) == 2 { // If there are only 2 connections, just return them.
-		connections := [2]*types.DbConnectionInfo{}
-
-		counter := 0
-		for _, dbConnection := range userConfig.DbConnections {
-			connections[counter] = dbConnection
-			counter++
-		}
-
-		return connections[0], connections[1], safego.None[string]()
 	}
 
-	PrintInColor(colors.Cyan, "Choose the connections from the list below to compare:")
+	utils.PrintInColor(colors.Cyan, "Choose the connections from the list below to compare:")
 
 	allConnectionNames := []string{}
 	for connectionName, _ := range userConfig.DbConnections {
@@ -46,7 +37,7 @@ func PromptForDbConnections(userConfig types.UserConfig) (*types.DbConnectionInf
 		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some(err.Error())
 	}
 
-	PrintInColor(colors.Cyan, "Choose the second database (The dialect must be the same as the first one):")
+	utils.PrintInColor(colors.Cyan, "Choose the second database (The dialect must be the same as the first one):")
 
 	// Filter out the first selected connection from the list of connections for the second
 	// prompt (We don't want to compare a database with itself.)

@@ -1,4 +1,4 @@
-package migration
+package diff
 
 import (
 	"database/sql"
@@ -7,13 +7,12 @@ import (
 	"github.com/Okira-E/patchi/pkg/utils"
 )
 
-// TableDiff represents the tables out of sync between two databases.
-func TableDiff(firstDb *types.DbConnection, secondDb *types.DbConnection) []types.TableDiff {
+// GetDiffInTablesBetweenSchemas represents the tables out of sync between two databases.
+func GetDiffInTablesBetweenSchemas(firstDb *types.DbConnection, secondDb *types.DbConnection) []types.TableDiff {
 	ret := []types.TableDiff{}
 
-	// Fetch names of every table in the first database
-	tablesInFirstDb := getTablesNames(firstDb.SqlConnection)
-	tablesInSecondDb := getTablesNames(secondDb.SqlConnection)
+	tablesInFirstDb := getAllTablesNamesInDb(firstDb.SqlConnection)
+	tablesInSecondDb := getAllTablesNamesInDb(secondDb.SqlConnection)
 
 	// Compare the two arrays of table names and return the difference.
 	// Tables that exist in the first database but not in the second database must have been created.
@@ -50,8 +49,8 @@ func TableDiff(firstDb *types.DbConnection, secondDb *types.DbConnection) []type
 	return ret
 }
 
-// getTablesNames returns an array of table names retrieved from given database connection.
-func getTablesNames(db *sql.DB) []string {
+// getAllTablesNamesInDb returns an array of table names retrieved from given database connection.
+func getAllTablesNamesInDb(db *sql.DB) []string {
 	rows, err := db.Query("SHOW TABLES")
 	if err != nil {
 		utils.Abort(fmt.Sprintf("Error querying database: %s", err.Error()))

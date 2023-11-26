@@ -2,10 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/Okira-E/patchi/pkg/safego"
 	"github.com/Okira-E/patchi/pkg/types"
 	"github.com/Okira-E/patchi/pkg/utils"
 	"github.com/Okira-E/patchi/pkg/vars"
+	"github.com/Okira-E/patchi/safego"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/manifoldco/promptui"
 	"os"
@@ -153,13 +153,13 @@ func AddDbConnection() safego.Option[error] {
 	}
 
 	userConfig.DbConnections[connectionName] = &types.DbConnectionInfo{
-		Dialect:  dialect,
-		Name:     connectionName,
-		Host:     host,
-		Port:     port,
-		User:     user,
-		Password: password,
-		Database: database,
+		Dialect:      dialect,
+		Name:         connectionName,
+		Host:         host,
+		Port:         port,
+		User:         user,
+		Password:     password,
+		DatabaseName: database,
 	}
 
 	configFilePathBasedOnOs, errOpt := getConfigFilePathBasedOnOS()
@@ -211,7 +211,7 @@ func PrintStoredConnections() {
 		for connectionName, connection := range userConfig.DbConnections {
 			maskedPassword := utils.MaskString(connection.Password)
 
-			t.AppendRow([]any{connectionName, connection.Dialect, connection.Host, connection.Port, connection.User, maskedPassword, connection.Database})
+			t.AppendRow([]any{connectionName, connection.Dialect, connection.Host, connection.Port, connection.User, maskedPassword, connection.DatabaseName})
 		}
 	} else {
 		t.AppendRow([]any{"No connections stored"})

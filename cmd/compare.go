@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/Okira-E/patchi/pkg/config"
+	"github.com/Okira-E/patchi/pkg/prompts"
 	"github.com/Okira-E/patchi/pkg/tui"
 	"github.com/Okira-E/patchi/pkg/types"
 	"github.com/Okira-E/patchi/pkg/utils"
@@ -25,7 +26,7 @@ migrating database environments.
 			return
 		}
 
-		firstDbConnectionInfo, secondDbConnectionInfo, errMsgOpt := utils.PromptForDbConnections(userConfig)
+		firstDbConnectionInfo, secondDbConnectionInfo, errMsgOpt := prompts.PromptForDbConnections(userConfig)
 		if errMsgOpt.IsSome() {
 			utils.PrintInColor(colors.Red, errMsgOpt.Unwrap())
 
@@ -62,7 +63,7 @@ migrating database environments.
 			utils.Abort(fmt.Sprintf("Failed to ping the \"%s\" database", secondDbConnectionInfo.Name))
 		}
 
-		params := &tui.HomeParams{
+		params := &tui.GlobalRendererParams{
 			FirstDb: types.DbConnection{
 				Info:          firstDbConnectionInfo,
 				SqlConnection: firstDbConnection,
@@ -73,6 +74,6 @@ migrating database environments.
 			},
 		}
 
-		tui.GlobalRenderer(params)
+		tui.RenderTui(params)
 	},
 }
