@@ -17,26 +17,26 @@ go build -o patchi
 
 ### Commands
 
-#### 1. `add`
+#### 1. Add a Connection
 Adds a new connection to a local config file. You can add as many connections as you want. It prompts you to enter the connection details.
 All database information are stored locally in a config file. The config file is located at the equivalent of `~/.patchi/config.json` on your OS.
 ```bash
 ./patchi add
 ```
 
-#### 2. `list`
+#### 2. List Connections
 Lists all the connections in the config file.
 ```bash
 ./patchi list
 ```
 
-#### 3. `compare`
+#### 3. Compare Two Connections
 Shows the differences between 2 connections. It prompts you to select the connections you want to compare.
 ```bash
 ./patchi compare
 ```
 
-#### 4. `rm`
+#### 4. Remove a Connection
 Removes a connection from the config file. It prompts you to select the connection you want to remove.
 It takes an optional argument which is the name of the connection you want to remove. Otherwise it prompts you to select the connection you want to remove.
 ```bash
