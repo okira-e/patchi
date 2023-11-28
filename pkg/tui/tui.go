@@ -9,7 +9,7 @@ import (
 	"github.com/gizak/termui/v3"
 )
 
-// TODO: Make a refresh key event that refreshes the diff.
+// TODO [FEATURE] @okira: Make a refresh key event that refreshes the diff.
 
 // RenderTui is the entry point for rendering the TUI for Patchi.
 // It represents the TUI library and event loop of the application. Actual UI related to the application and its
@@ -40,7 +40,7 @@ func RenderTui(params *GlobalRendererParams) {
 
 		// - Help widget
 		if event.Type == termui.KeyboardEvent && (event.ID == "h" || event.ID == "?") {
-			// TODO: Show help widget.
+			// TODO [FEATURE] @okira: Show help widget.
 		}
 
 		// Event handling:
