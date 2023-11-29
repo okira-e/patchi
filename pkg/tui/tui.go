@@ -174,44 +174,40 @@ func RenderTui(params *GlobalRendererParams) {
 			}
 		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "<C-d>") {
+			focusedWidget := globalRenderer.FocusedWidget
+
 			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				globalRenderer.DiffWidget.ScrollHalfPageDown()
+				focusedWidget.ScrollHalfPageDown()
 				globalRenderer.Render(safego.None[string]())
 			}
 		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "<C-u>") {
+			focusedWidget := globalRenderer.FocusedWidget
+
 			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				globalRenderer.DiffWidget.ScrollHalfPageUp()
-				globalRenderer.Render(safego.None[string]())
-			}
-		}
-		if event.Type == termui.KeyboardEvent && (event.ID == "<C-f>") {
-			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				globalRenderer.DiffWidget.ScrollPageDown()
-				globalRenderer.Render(safego.None[string]())
-			}
-		}
-		if event.Type == termui.KeyboardEvent && (event.ID == "<C-b>") {
-			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				globalRenderer.DiffWidget.ScrollPageUp()
+				focusedWidget.ScrollHalfPageUp()
 				globalRenderer.Render(safego.None[string]())
 			}
 		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "g") {
-			if event.Type == termui.KeyboardEvent && (event.ID == "g") {
-				globalRenderer.DiffWidget.ScrollTop()
-				globalRenderer.Render(safego.None[string]())
-			}
+			focusedWidget := globalRenderer.FocusedWidget
+
+			focusedWidget.ScrollTop()
+			globalRenderer.Render(safego.None[string]())
 		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Home>") {
 			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				globalRenderer.DiffWidget.ScrollTop()
+				focusedWidget := globalRenderer.FocusedWidget
+
+				focusedWidget.ScrollTop()
 				globalRenderer.Render(safego.None[string]())
 			}
 		}
 		if event.Type == termui.KeyboardEvent && ((event.ID == "G") || (event.ID == "<End>")) {
 			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				globalRenderer.DiffWidget.ScrollBottom()
+				focusedWidget := globalRenderer.FocusedWidget
+
+				focusedWidget.ScrollBottom()
 				globalRenderer.Render(safego.None[string]())
 			}
 		}
