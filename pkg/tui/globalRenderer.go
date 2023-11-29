@@ -39,6 +39,9 @@ type GlobalRenderer struct {
 	// focusedWidget is the widget that is currently being controlled by the user.
 	FocusedWidget *widgets.List
 
+	// LastFocusedWidget is the widget that was focused before the current one.
+	LastFocusedWidget *widgets.List
+
 	// HelpWidget shows all the keyboard shortcuts for the app.
 	HelpWidget *widgets.List
 
@@ -138,11 +141,12 @@ func (self *GlobalRenderer) ClearBorderStyles() {
 func (self *GlobalRenderer) ToggleHelpWidget() {
 	if self.ShowHelpWidget {
 		self.ShowHelpWidget = false
-		self.FocusedWidget = self.DiffWidget // BUG: This should be the widget that was focused before the help widget was shown.
+		self.FocusedWidget = self.LastFocusedWidget
 
 		self.MessageBarWidget.Text = `Press <h> or <?> for help.`
 	} else {
 		self.ShowHelpWidget = true
+		self.LastFocusedWidget = self.FocusedWidget
 		self.FocusedWidget = self.HelpWidget
 
 		self.MessageBarWidget.Text = `Press <Escape> to exit help.`
