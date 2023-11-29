@@ -9,7 +9,9 @@ import (
 	"github.com/gizak/termui/v3"
 )
 
-// TODO [FEATURE] @okira: Make a refresh key event that refreshes the diff.
+// TODO [FEATURE] @okira: Make <Ctrl + r> key event that reloads the diff.
+// TODO [FEATURE] @okira: Make <Ctrl + s> key event that saves the generated SQL to a file.
+// TODO [FEATURE] @okira: Make <Ctrl + e> key event that opens the generated SQL in an editor.
 
 // RenderTui is the entry point for rendering the TUI for Patchi.
 // It represents the TUI library and event loop of the application. Actual UI related to the application and its
@@ -31,16 +33,28 @@ func RenderTui(params *GlobalRendererParams) {
 	globalRenderer.Render(safego.None[string]())
 
 	for event := range termui.PollEvents() {
-		// Keys mappings:
 
-		// - Exiting
+		if event.Type == termui.KeyboardEvent && (event.ID == "<Escape>") {
+			globalRenderer.ShowHelpWidget = false
+			globalRenderer.FocusedWidget = globalRenderer.DiffWidget
+
+			globalRenderer.MessageBarWidget.Text = `Press <h> or <?> for help.`
+
+			globalRenderer.Render(safego.None[string]())
+		}
+
 		if event.Type == termui.KeyboardEvent && (event.ID == "q" || event.ID == "<C-c>") {
 			break
 		}
 
-		// - Help widget
+		// Help widget
 		if event.Type == termui.KeyboardEvent && (event.ID == "h" || event.ID == "?") {
-			// TODO [FEATURE] @okira: Show help widget.
+			globalRenderer.ShowHelpWidget = true
+			globalRenderer.FocusedWidget = globalRenderer.HelpWidget
+
+			globalRenderer.MessageBarWidget.Text = `Press <Escape> to exit help.`
+
+			globalRenderer.Render(safego.None[string]())
 		}
 
 		// Event handling:
@@ -69,9 +83,6 @@ func RenderTui(params *GlobalRendererParams) {
 			} else {
 				globalRenderer.FocusedWidget = globalRenderer.DiffWidget
 			}
-
-			globalRenderer.ClearBorderStyles()
-			globalRenderer.FocusedWidget.BorderStyle = focusedWidgetBorderStyle
 
 			globalRenderer.Render(safego.None[string]())
 		}

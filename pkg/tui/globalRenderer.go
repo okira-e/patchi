@@ -39,6 +39,12 @@ type GlobalRenderer struct {
 	// focusedWidget is the widget that is currently being controlled by the user.
 	FocusedWidget *widgets.List
 
+	// HelpWidget shows all the keyboard shortcuts for the app.
+	HelpWidget *widgets.List
+
+	// ShowHelpWidget determines if `Render()` needs to render the default helping widget.
+	ShowHelpWidget bool
+
 	// showConfirmation is a flag that indicates whether the confirmation widget should be shown.
 	showConfirmation bool
 
@@ -52,12 +58,12 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 		DiffWidget:       widgets.NewList(),
 		SqlWidget:        widgets.NewList(),
 		MessageBarWidget: widgets.NewParagraph(),
+		HelpWidget:       widgets.NewList(),
 		showConfirmation: true,
 		params:           params,
 	}
 
 	globalRenderer.FocusedWidget = globalRenderer.DiffWidget
-	globalRenderer.FocusedWidget.BorderStyle = focusedWidgetBorderStyle
 
 	globalRenderer.DiffWidget.TextStyle = termui.NewStyle(termui.ColorWhite)
 	globalRenderer.DiffWidget.SelectedRowStyle = termui.NewStyle(termui.ColorBlack, termui.ColorWhite)
@@ -71,7 +77,20 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 	globalRenderer.SqlWidget.PaddingLeft = 2
 
 	globalRenderer.MessageBarWidget.Border = false
-	globalRenderer.MessageBarWidget.Text = "Press Enter to fetch changes."
+	globalRenderer.MessageBarWidget.Text = `Press <h> or <?> for help.`
+
+	globalRenderer.HelpWidget.Title = "Help"
+	globalRenderer.HelpWidget.SelectedRowStyle = termui.NewStyle(termui.ColorBlack, termui.ColorWhite)
+	globalRenderer.HelpWidget.Rows = []string{
+		`[<h | ?>](fg:green)` + "\t \t \t \t \t \t \t \t to show this help widget.",
+		`[<Escape>](fg:green)` + "\t \t \t \t \t \t \t to exit help.",
+		`[<q | Ctrl+c>](fg:green)` + "\t \t \t to quit.",
+		`<[ | Left>` + "\t \t \t \t \t to move to the previous tab.",
+		`<] | Right>` + "\t \t \t \t to move to the next tab.",
+		`[<Tab>](fg:green)` + "\t \t \t \t \t \t \t \t \t \t to move between the diff and sql widgets.",
+		`[<Enter>](fg:green)` + "\t \t \t \t \t \t \t \t on the SQL widget to copy the selected SQL to the clipboard.",
+		`[<Ctrl+a>](fg:green)` + "\t \t \t \t \t \t \t on the SQL widget to copy all SQL to the clipboard.",
+	}
 
 	return globalRenderer
 }
@@ -80,7 +99,7 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 func (self *GlobalRenderer) ResizeWidgets(width int, height int) {
 	const tabPaneHeight = 14
 
-	self.TabPaneWidget.SetRect(0, 0, width/2, height/tabPaneHeight)
+	self.TabPaneWidget.SetRect(0, 0, width/2, height/tabPaneHeight) // TODO [FIX] @okira: Put a limit on the height of the tab pane.
 	self.DiffWidget.SetRect(0, height/tabPaneHeight, width/2, height-(height/35))
 	self.SqlWidget.SetRect(width/2, 0, width, height-(height/35))
 	self.MessageBarWidget.SetRect(0, height-(height/35), width, height)
@@ -119,13 +138,12 @@ func (self *GlobalRenderer) Render(userPrompt safego.Option[string]) {
 
 		// Check if the user has started the comparing process or not yet. Confirmation widget is shown instead
 		// of the diff widget if not.
-		confirmationWidget := safego.None[*widgets.Paragraph]()
+		confirmationWidget := widgets.NewParagraph()
 		if self.showConfirmation {
-			confirmationWidget = safego.Some(widgets.NewParagraph())
-			confirmationWidget.Unwrap().SetRect(diffWidgetRec.Min.X, diffWidgetRec.Min.Y+1, diffWidgetRec.Max.X, diffWidgetRec.Max.Y)
-			confirmationWidget.Unwrap().BorderTop = false
+			confirmationWidget.SetRect(diffWidgetRec.Min.X, diffWidgetRec.Min.Y+1, diffWidgetRec.Max.X, diffWidgetRec.Max.Y)
+			confirmationWidget.BorderTop = false
 
-			confirmationWidget.Unwrap().Text = "Press Enter to fetch changes."
+			confirmationWidget.Text = "Press Enter to fetch changes."
 		} else {
 			diffResult := diff.GetDiffInTablesBetweenSchemas(&self.params.FirstDb, &self.params.SecondDb)
 
@@ -143,16 +161,30 @@ func (self *GlobalRenderer) Render(userPrompt safego.Option[string]) {
 			}
 		}
 
+		// Set the currently focused widget's border style to be green.
+		self.ClearBorderStyles()
+		self.FocusedWidget.BorderStyle = focusedWidgetBorderStyle
+
 		if userPrompt.IsSome() {
 			self.MessageBarWidget.Text = userPrompt.Unwrap()
 		}
 
-		// Render the widgets.
-		if confirmationWidget.IsSome() {
-			termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget, self.MessageBarWidget, confirmationWidget.Unwrap())
+		// Calling `SetRect` and setting the dimensions of a widget acts as activating it (you can't just pass nil
+		// to `Render()`) for some reason. So we call
+		if self.ShowHelpWidget {
+			self.HelpWidget.SetRect(
+				self.width/4,
+				self.height/3,
+				self.width-self.width/4,
+				self.height-self.height/4,
+			)
 		} else {
-			termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget, self.MessageBarWidget)
+			self.HelpWidget.SetRect(0, 0, 0, 0)
 		}
+
+		// Render the widgets.
+
+		termui.Render(self.TabPaneWidget, self.DiffWidget, self.SqlWidget, self.MessageBarWidget, confirmationWidget, self.HelpWidget)
 
 	} else if self.TabPaneWidget.ActiveTabIndex == 1 { // Columns
 
