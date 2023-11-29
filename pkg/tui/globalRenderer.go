@@ -54,6 +54,9 @@ type GlobalRenderer struct {
 	// ShowConfirmation determines if Render method needs to render confirmationWidget or not.
 	ShowConfirmation bool
 
+	// Tabs holds the data for each tab.
+	tabs [6][]string
+
 	// params holds the data parameters that are passed to the global renderer.
 	params *GlobalRendererParams
 }
@@ -153,15 +156,15 @@ func (self *GlobalRenderer) ToggleHelpWidget() {
 	}
 }
 
+// FIX: This Render is currently responsible for both rendering and updating the widgets. It should only be
+// responsible for rendering. The updating should be done by the event handlers invoking the sequelizer package.
+// P.S. Rename GlobalRenderer to PatchiRenderer.
+
 // Render is responsible for rendering the TUI.
 //
 // - param `userPrompt` is an optional string that is shown in the message bar.
 func (self *GlobalRenderer) Render(userPrompt safego.Option[string]) {
 	termui.Clear()
-
-	// BUG: DiffWidget.Rows persists between tabs. I don't want to clear it on each tab switch because
-	// I want the user to go back to the previous tab and see the diff that was there before. So we should instead
-	// have a map for each tab and store the diff there. The map should be keyed by the tab index.
 
 	if self.TabPaneWidget.ActiveTabIndex == 0 { // Tables
 
@@ -185,29 +188,37 @@ func (self *GlobalRenderer) Render(userPrompt safego.Option[string]) {
 					}
 
 					self.DiffWidget.Rows = append(self.DiffWidget.Rows, text)
+					self.tabs[0] = self.DiffWidget.Rows
 				}
 			}
+		} else {
+			self.DiffWidget.Rows = self.tabs[0]
 		}
 
 	} else if self.TabPaneWidget.ActiveTabIndex == 1 { // Columns
 
 		self.DiffWidget.Title = "Columns"
+		self.DiffWidget.Rows = self.tabs[1]
 
 	} else if self.TabPaneWidget.ActiveTabIndex == 2 { // Views
 
 		self.DiffWidget.Title = "Views"
+		self.DiffWidget.Rows = self.tabs[2]
 
 	} else if self.TabPaneWidget.ActiveTabIndex == 3 { // Procedures
 
 		self.DiffWidget.Title = "Procedures"
+		self.DiffWidget.Rows = self.tabs[3]
 
 	} else if self.TabPaneWidget.ActiveTabIndex == 4 { // Functions
 
 		self.DiffWidget.Title = "Functions"
+		self.DiffWidget.Rows = self.tabs[4]
 
 	} else if self.TabPaneWidget.ActiveTabIndex == 5 { // Triggers
 
 		self.DiffWidget.Title = "Triggers"
+		self.DiffWidget.Rows = self.tabs[5]
 
 	}
 
