@@ -14,8 +14,8 @@ var RmConnectionCmd = &cobra.Command{
 	Short: "Removes a connection from the config file.",
 	Long:  "Removes a stored database connection from the config file.",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO [FEATURE] @okira: Add a way to remove all connections.
-		// TODO [FEATURE] @okira: Make removing a connection a selection prompt.
+		// FEAT: Add a way to remove all connections.
+		// FEAT: Make removing a connection a selection prompt.
 
 		var err error
 		var connectionName string

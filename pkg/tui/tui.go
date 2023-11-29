@@ -9,9 +9,9 @@ import (
 	"github.com/gizak/termui/v3"
 )
 
-// TODO [FEATURE] @okira: Make <Ctrl + r> key event that reloads the diff.
-// TODO [FEATURE] @okira: Make <Ctrl + s> key event that saves the generated SQL to a file.
-// TODO [FEATURE] @okira: Make <Ctrl + e> key event that opens the generated SQL in an editor.
+// FEAT: Make <Ctrl + r> key event that reloads the diff.
+// FEAT: Make <Ctrl + s> key event that saves the generated SQL to a file.
+// FEAT: Make <Ctrl + e> key event that opens the generated SQL in an editor.
 
 // RenderTui is the entry point for rendering the TUI for Patchi.
 // It represents the TUI library and event loop of the application. Actual UI related to the application and its
@@ -59,7 +59,7 @@ func RenderTui(params *GlobalRendererParams) {
 
 		// Event handling:
 
-		// - Change widgets size & location based on resizing the terminal
+		// Change widgets size & location based on resizing the terminal
 		if event.Type == termui.ResizeEvent {
 			width, height = termui.TerminalDimensions()
 
@@ -68,9 +68,9 @@ func RenderTui(params *GlobalRendererParams) {
 			globalRenderer.Render(safego.None[string]())
 		}
 
-		// - Setup moving from a tab to another.
+		// Setup moving from a tab to another.
 		if event.Type == termui.KeyboardEvent && (event.ID == "]" || event.ID == "<Right>" || event.ID == "l") {
-			// TODO [ENHANCEMENT] @okira: Going to the right of the last option should bring you back. The opposite is true.
+			// FEAT: Going to the right of the last option should bring you back. The opposite is true.
 			globalRenderer.TabPaneWidget.FocusRight()
 			globalRenderer.Render(safego.None[string]())
 		}

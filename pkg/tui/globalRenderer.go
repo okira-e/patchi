@@ -112,7 +112,7 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 func (self *GlobalRenderer) ResizeWidgets(width int, height int) {
 	const tabPaneHeight = 14
 
-	self.TabPaneWidget.SetRect(0, 0, width/2, height/tabPaneHeight) // TODO [FIX] @okira: Put a limit on the height of the tab pane.
+	self.TabPaneWidget.SetRect(0, 0, width/2, height/tabPaneHeight) // BUG: Put a limit on the height of the tab pane.
 	self.DiffWidget.SetRect(0, height/tabPaneHeight, width/2, height-(height/35))
 	self.SqlWidget.SetRect(width/2, 0, width, height-(height/35))
 	self.MessageBarWidget.SetRect(0, height-(height/35), width, height)
@@ -130,7 +130,7 @@ func (self *GlobalRenderer) ClearBorderStyles() {
 func (self *GlobalRenderer) ToggleHelpWidget() {
 	if self.ShowHelpWidget {
 		self.ShowHelpWidget = false
-		self.FocusedWidget = self.DiffWidget // TODO [FIX] @okira: This should be the widget that was focused before the help widget was shown.
+		self.FocusedWidget = self.DiffWidget // BUG: This should be the widget that was focused before the help widget was shown.
 
 		self.MessageBarWidget.Text = `Press <h> or <?> for help.`
 	} else {
@@ -147,7 +147,7 @@ func (self *GlobalRenderer) ToggleHelpWidget() {
 func (self *GlobalRenderer) Render(userPrompt safego.Option[string]) {
 	termui.Clear()
 
-	// TODO [BUG] @okira: DiffWidget.Rows persists between tabs. I don't want to clear it on each tab switch because
+	// BUG: DiffWidget.Rows persists between tabs. I don't want to clear it on each tab switch because
 	// I want the user to go back to the previous tab and see the diff that was there before. So we should instead
 	// have a map for each tab and store the diff there. The map should be keyed by the tab index.
 
