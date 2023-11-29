@@ -45,12 +45,13 @@ type GlobalRenderer struct {
 	// confirmationWidget is the widget that is shown when the user has not yet started the comparing process.
 	confirmationWidget *widgets.Paragraph
 
-	// ShowHelpWidget determines if `Render()` needs to render the default helping widget.
+	// ShowHelpWidget determines if Render method needs to render HelpWidget or not.
 	ShowHelpWidget bool
 
-	// ShowConfirmation is a flag that indicates whether the confirmation widget should be shown.
+	// ShowConfirmation determines if Render method needs to render confirmationWidget or not.
 	ShowConfirmation bool
 
+	// params holds the data parameters that are passed to the global renderer.
 	params *GlobalRendererParams
 }
 
@@ -69,17 +70,20 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 
 	globalRenderer.FocusedWidget = globalRenderer.DiffWidget
 
+	// BUG: Diff & SQL widgets are not scrolling for some reason. But the help widget is scrolling fine even though
+	// it has the same type & settings as the diff & sql widgets.
 	globalRenderer.DiffWidget.TextStyle = termui.NewStyle(termui.ColorWhite)
 	globalRenderer.DiffWidget.SelectedRowStyle = termui.NewStyle(termui.ColorBlack, termui.ColorWhite)
-	globalRenderer.DiffWidget.WrapText = false
+	globalRenderer.DiffWidget.WrapText = true
 	globalRenderer.DiffWidget.PaddingLeft = 2
 	globalRenderer.DiffWidget.Rows = []string{}
 
 	globalRenderer.SqlWidget.Title = "SQL"
 	globalRenderer.SqlWidget.TextStyle = termui.NewStyle(termui.ColorWhite)
 	globalRenderer.SqlWidget.SelectedRowStyle = termui.NewStyle(termui.ColorGreen)
-	globalRenderer.SqlWidget.WrapText = false
+	globalRenderer.SqlWidget.WrapText = true
 	globalRenderer.SqlWidget.PaddingLeft = 2
+	globalRenderer.SqlWidget.Rows = []string{}
 
 	globalRenderer.MessageBarWidget.Border = false
 	globalRenderer.MessageBarWidget.Text = `Press <h> or <?> for help.`
@@ -106,16 +110,19 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 
 // ResizeWidgets resizes the widgets based on the new width and height of the terminal.
 // This method should be called whenever the terminal is resized.
-// It is also what sets the original sizing for most of the widgets. I say almost because widgets with conditional
+// NOTE: It is also what sets the original sizing for most of the widgets. I say most because widgets with conditional
 // rendering like the help widget only get their sizing set when they are rendered. They can all be found at the end
-// of the `Render(..)` method.
+// of the Render method. The Render method uses the width and height set by this widget whenever the window is
+// resized, so conditional widgets that are sized in the Render method will also be corrected when the window is resized.
 func (self *GlobalRenderer) ResizeWidgets(width int, height int) {
 	const tabPaneHeight = 14
 
+	messageBarHeight := height / 35
+
 	self.TabPaneWidget.SetRect(0, 0, width/2, height/tabPaneHeight) // BUG: Put a limit on the height of the tab pane.
-	self.DiffWidget.SetRect(0, height/tabPaneHeight, width/2, height-(height/35))
-	self.SqlWidget.SetRect(width/2, 0, width, height-(height/35))
-	self.MessageBarWidget.SetRect(0, height-(height/35), width, height)
+	self.DiffWidget.SetRect(0, height/tabPaneHeight, width/2, height-(messageBarHeight))
+	self.SqlWidget.SetRect(width/2, 0, width, height-(messageBarHeight))
+	self.MessageBarWidget.SetRect(0, height-(messageBarHeight), width, height)
 
 	self.width = width
 	self.height = height
@@ -127,6 +134,7 @@ func (self *GlobalRenderer) ClearBorderStyles() {
 	self.SqlWidget.BorderStyle = termui.NewStyle(termui.ColorClear)
 }
 
+// ToggleHelpWidget toggles the help widget.
 func (self *GlobalRenderer) ToggleHelpWidget() {
 	if self.ShowHelpWidget {
 		self.ShowHelpWidget = false
