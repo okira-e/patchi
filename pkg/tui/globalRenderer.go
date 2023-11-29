@@ -124,6 +124,20 @@ func (self *GlobalRenderer) ClearBorderStyles() {
 	self.SqlWidget.BorderStyle = termui.NewStyle(termui.ColorClear)
 }
 
+func (self *GlobalRenderer) ToggleHelpWidget() {
+	if self.ShowHelpWidget {
+		self.ShowHelpWidget = false
+		self.FocusedWidget = self.DiffWidget // TODO [FIX] @okira: This should be the widget that was focused before the help widget was shown.
+
+		self.MessageBarWidget.Text = `Press <h> or <?> for help.`
+	} else {
+		self.ShowHelpWidget = true
+		self.FocusedWidget = self.HelpWidget
+
+		self.MessageBarWidget.Text = `Press <Escape> to exit help.`
+	}
+}
+
 // Render is responsible for rendering the TUI.
 //
 // - param `userPrompt` is an optional string that is shown in the message bar.

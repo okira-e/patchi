@@ -35,24 +35,24 @@ func RenderTui(params *GlobalRendererParams) {
 	for event := range termui.PollEvents() {
 
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Escape>") {
-			globalRenderer.ShowHelpWidget = false
-			globalRenderer.FocusedWidget = globalRenderer.DiffWidget
-
-			globalRenderer.MessageBarWidget.Text = `Press <h> or <?> for help.`
+			globalRenderer.ToggleHelpWidget()
 
 			globalRenderer.Render(safego.None[string]())
 		}
 
 		if event.Type == termui.KeyboardEvent && (event.ID == "q" || event.ID == "<C-c>") {
-			break
+			if globalRenderer.ShowHelpWidget {
+				globalRenderer.ToggleHelpWidget()
+
+				globalRenderer.Render(safego.None[string]())
+			} else {
+				break // Exit Patchi.
+			}
 		}
 
 		// Help widget
 		if event.Type == termui.KeyboardEvent && (event.ID == "h" || event.ID == "?") {
-			globalRenderer.ShowHelpWidget = true
-			globalRenderer.FocusedWidget = globalRenderer.HelpWidget
-
-			globalRenderer.MessageBarWidget.Text = `Press <Escape> to exit help.`
+			globalRenderer.ToggleHelpWidget()
 
 			globalRenderer.Render(safego.None[string]())
 		}
@@ -109,7 +109,7 @@ func RenderTui(params *GlobalRendererParams) {
 			globalRenderer.Render(userPrompt)
 		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Enter>") {
-			errPrompt := safego.None[string]()
+			optErrPrompt := safego.None[string]()
 
 			if globalRenderer.showConfirmation {
 				globalRenderer.SetShowConfirmation(false)
@@ -148,13 +148,13 @@ func RenderTui(params *GlobalRendererParams) {
 
 				err := clipboard.WriteAll(selectedSqlForCopy)
 				if err != nil {
-					errPrompt = safego.Some("[Error copying to clipboard: " + err.Error() + "](fg:red)")
+					optErrPrompt = safego.Some("[Error copying to clipboard: " + err.Error() + "](fg:red)")
 				} else {
-					errPrompt = safego.Some("[Copied selected SQL to clipboard.](fg:green)")
+					optErrPrompt = safego.Some("[Copied selected SQL to clipboard.](fg:green)")
 				}
 			}
 
-			globalRenderer.Render(errPrompt)
+			globalRenderer.Render(optErrPrompt)
 
 		}
 		if event.Type == termui.KeyboardEvent && ((event.ID == "j") || (event.ID == "<Down>")) {
