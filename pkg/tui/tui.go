@@ -70,6 +70,7 @@ func RenderTui(params *GlobalRendererParams) {
 
 		// - Setup moving from a tab to another.
 		if event.Type == termui.KeyboardEvent && (event.ID == "]" || event.ID == "<Right>" || event.ID == "l") {
+			// TODO [ENHANCEMENT] @okira: Going to the right of the last option should bring you back. The opposite is true.
 			globalRenderer.TabPaneWidget.FocusRight()
 			globalRenderer.Render(safego.None[string]())
 		}
@@ -111,8 +112,8 @@ func RenderTui(params *GlobalRendererParams) {
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Enter>") {
 			optErrPrompt := safego.None[string]()
 
-			if globalRenderer.showConfirmation {
-				globalRenderer.SetShowConfirmation(false)
+			if globalRenderer.ShowConfirmation {
+				globalRenderer.ShowConfirmation = false
 			} else if globalRenderer.FocusedWidget == globalRenderer.DiffWidget {
 				if len(globalRenderer.DiffWidget.Rows) == 0 { // List of entities is empty.
 					continue
