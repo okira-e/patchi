@@ -1,10 +1,10 @@
 package tui
 
 import (
+	"github.com/Okira-E/patchi/pkg/difftool"
 	"strconv"
 	"strings"
 
-	"github.com/Okira-E/patchi/pkg/diff"
 	"github.com/Okira-E/patchi/pkg/types"
 	"github.com/Okira-E/patchi/safego"
 	"github.com/gizak/termui/v3"
@@ -76,8 +76,11 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 
 	globalRenderer.FocusedWidget = globalRenderer.DiffWidget
 
-	// BUG: Diff & SQL widgets are not scrolling for some reason. But the help widget is scrolling fine even though
-	// it has the same type & settings as the diff & sql widgets.
+	// BUG: Diff & SQL widgets are not scrolling perhaps because their text includes "\n" characters which confuses
+	// termui. The workaround is to remove the "\n" characters from the text and depend on text wrapping provided
+	// by termui. But it also seems after trying, that even then, it doesn't scroll when the content is wrapped (it works
+	// when there is no wrapping) by the library. So it seems to me text wrapping provided by termui has the same bug
+	//introduced by manually including '\n' in our strings.
 	globalRenderer.DiffWidget.TextStyle = termui.NewStyle(termui.ColorWhite)
 	globalRenderer.DiffWidget.SelectedRowStyle = termui.NewStyle(termui.ColorBlack, termui.ColorWhite)
 	globalRenderer.DiffWidget.WrapText = true
@@ -171,11 +174,8 @@ func (self *GlobalRenderer) Render(userPrompt safego.Option[string]) {
 		self.DiffWidget.Title = "Tables"
 		if len(self.DiffWidget.Rows) == 0 {
 
-			// Check if the user has started the comparing process or not yet. Confirmation widget is shown instead
-			// of the diff widget if not.
-			if self.ShowConfirmation { // If `ShowConfirmation` is false then `SetRect()` will not be called on it and it will not be rendered.
-			} else {
-				diffResult := diff.GetDiffInTablesBetweenSchemas(&self.params.FirstDb, &self.params.SecondDb)
+			if !self.ShowConfirmation {
+				diffResult := difftool.GetDiffInTablesBetweenSchemas(&self.params.FirstDb, &self.params.SecondDb)
 
 				self.MessageBarWidget.Text = "Found " + strconv.Itoa(len(diffResult)) + " changes in " + strings.ToLower(self.DiffWidget.Title) + "."
 

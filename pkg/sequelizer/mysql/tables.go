@@ -28,5 +28,7 @@ func RecreateSqlForTables(firstDb types.DbConnection, secondDb types.DbConnectio
 		// UNIMPLEMENTED
 	}
 
+	//utils.RemoveChar(&ret, '\n')
+
 	return ret
 }

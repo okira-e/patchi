@@ -139,7 +139,7 @@ func RenderTui(params *GlobalRendererParams) {
 
 				sql := sequelizer.PatchSqlForEntity(params.FirstDb, params.SecondDb, currentlySelectedTab, currentlySelectedEntityName, entityStatus)
 
-				globalRenderer.SqlWidget.Rows = append(globalRenderer.SqlWidget.Rows, sql+"\n")
+				globalRenderer.SqlWidget.Rows = append(globalRenderer.SqlWidget.Rows, sql)
 			} else if globalRenderer.FocusedWidget == globalRenderer.SqlWidget {
 				if len(globalRenderer.SqlWidget.Rows) == 0 { // List of entities is empty.
 					continue
