@@ -84,11 +84,6 @@ func NewPatchiRenderer(params *PatchiRendererParams) *PatchiRenderer {
 
 	patchiRenderer.FocusedWidget = patchiRenderer.DiffWidget
 
-	// BUG: Diff & SQL widgets are not scrolling perhaps because their text includes "\n" characters which confuses
-	// termui. The workaround is to remove the "\n" characters from the text and depend on text wrapping provided
-	// by termui. But it also seems after trying, that even then, it doesn't scroll when the content is wrapped (it works
-	// when there is no wrapping) by the library. So it seems to me text wrapping provided by termui has the same bug
-	//introduced by manually including '\n' in our strings.
 	patchiRenderer.DiffWidget.TextStyle = termui.NewStyle(termui.ColorWhite)
 	patchiRenderer.DiffWidget.SelectedRowStyle = termui.NewStyle(termui.ColorBlack, termui.ColorWhite)
 	patchiRenderer.DiffWidget.WrapText = true
