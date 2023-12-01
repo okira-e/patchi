@@ -1,9 +1,10 @@
 package tui
 
 import (
-	"github.com/Okira-E/patchi/pkg/difftool"
 	"strconv"
 	"strings"
+
+	"github.com/Okira-E/patchi/pkg/difftool"
 
 	"github.com/Okira-E/patchi/pkg/types"
 	"github.com/Okira-E/patchi/safego"
@@ -31,16 +32,16 @@ type GlobalRenderer struct {
 	DiffWidget *widgets.List
 
 	// SqlWidget is the widget that holds the sql formulated from the diff.
-	SqlWidget *widgets.List
+	SqlWidget *widgets.Paragraph
 
 	// MessageBarWidget is the widget that holds the messages that are shown to the user.
 	MessageBarWidget *widgets.Paragraph
 
 	// focusedWidget is the widget that is currently being controlled by the user.
-	FocusedWidget *widgets.List
+	FocusedWidget any // FIX: Could not find an interface that is a union of all the widgets in termui so I used `any`.
 
 	// LastFocusedWidget is the widget that was focused before the current one.
-	LastFocusedWidget *widgets.List
+	LastFocusedWidget any
 
 	// HelpWidget shows all the keyboard shortcuts for the app.
 	HelpWidget *widgets.List
@@ -66,7 +67,7 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 	globalRenderer := &GlobalRenderer{
 		TabPaneWidget:      widgets.NewTabPane("Tables", "Columns", "Views", "Procedures", "Functions", "Triggers"),
 		DiffWidget:         widgets.NewList(),
-		SqlWidget:          widgets.NewList(),
+		SqlWidget:          widgets.NewParagraph(),
 		MessageBarWidget:   widgets.NewParagraph(),
 		HelpWidget:         widgets.NewList(),
 		confirmationWidget: widgets.NewParagraph(),
@@ -89,10 +90,9 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 
 	globalRenderer.SqlWidget.Title = "SQL"
 	globalRenderer.SqlWidget.TextStyle = termui.NewStyle(termui.ColorWhite)
-	globalRenderer.SqlWidget.SelectedRowStyle = termui.NewStyle(termui.ColorGreen)
 	globalRenderer.SqlWidget.WrapText = true
 	globalRenderer.SqlWidget.PaddingLeft = 2
-	globalRenderer.SqlWidget.Rows = []string{}
+	globalRenderer.SqlWidget.Text = ""
 
 	globalRenderer.MessageBarWidget.Border = false
 	globalRenderer.MessageBarWidget.Text = `Press <h> or <?> for help.`
@@ -103,6 +103,7 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 		`[<h | ?>](fg:green)` + "\t \t \t \t \t \t \t \t to show this help widget.",
 		`[<Escape>](fg:green)` + "\t \t \t \t \t \t \t to exit help.",
 		`[<q | Ctrl+c>](fg:green)` + "\t \t \t to quit.",
+		// NOTE: The two rules below are not highlighted like the rest because a never closing '[' breaks termui regex.
 		`<[ | Left>` + "\t \t \t \t \t to move to the previous tab.",
 		`<] | Right>` + "\t \t \t \t to move to the next tab.",
 		`[<Tab>](fg:green)` + "\t \t \t \t \t \t \t \t \t \t to move between the diff and sql widgets.",
@@ -224,7 +225,17 @@ func (self *GlobalRenderer) Render(userPrompt safego.Option[string]) {
 
 	// Set the currently focused widget's border style to be green.
 	self.ClearBorderStyles()
-	self.FocusedWidget.BorderStyle = focusedWidgetBorderStyle
+
+	// Set the BorderStyle for the currently FocusedWidget. Since it is of `any` type it needs to be casted to any
+	// type that it could be. Simple `FocusedWidget.BorderStyle` returns an error.
+	switch self.FocusedWidget.(type) {
+		case *widgets.Paragraph:
+			self.FocusedWidget.(*widgets.Paragraph).BorderStyle = focusedWidgetBorderStyle
+		case *widgets.List:
+			self.FocusedWidget.(*widgets.List)     .BorderStyle = focusedWidgetBorderStyle
+		case *widgets.TabPane:
+			self.FocusedWidget.(*widgets.TabPane)  .BorderStyle = focusedWidgetBorderStyle
+	}
 
 	if userPrompt.IsSome() {
 		self.MessageBarWidget.Text = userPrompt.Unwrap()

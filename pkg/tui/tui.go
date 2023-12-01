@@ -2,11 +2,13 @@ package tui
 
 import (
 	"fmt"
+
 	"github.com/Okira-E/patchi/pkg/sequelizer"
 	"github.com/Okira-E/patchi/pkg/utils"
 	"github.com/Okira-E/patchi/safego"
 	"github.com/atotto/clipboard"
 	"github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3/widgets"
 )
 
 // FEAT: Make <Ctrl + r> key event that reloads the diff.
@@ -87,29 +89,10 @@ func RenderTui(params *GlobalRendererParams) {
 
 			globalRenderer.Render(safego.None[string]())
 		}
-		// Copy all generated SQL to clipboard.
-		if event.Type == termui.KeyboardEvent && (event.ID == "<C-a>") && (globalRenderer.FocusedWidget == globalRenderer.SqlWidget) {
-			userPrompt := safego.None[string]()
-
-			if len(globalRenderer.SqlWidget.Rows) == 0 { // List of entities is empty.
-				continue
-			}
-
-			netSql := ""
-			for _, sql := range globalRenderer.SqlWidget.Rows {
-				netSql += sql
-			}
-
-			err := clipboard.WriteAll(netSql)
-			if err != nil {
-				userPrompt = safego.Some("[Error copying to clipboard: " + err.Error() + "](fg:red)")
-			} else {
-				userPrompt = safego.Some("[Copied entire generated SQL to clipboard.](fg:green)")
-			}
-
-			globalRenderer.Render(userPrompt)
-		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Enter>") {
+			// Responsible for:
+			// - Diff widget -> Generates the unsynced entrie names (tables, columns, views, ..etc)
+			// - SQL widget -> Copies the generated SQL.
 			optErrPrompt := safego.None[string]()
 
 			if globalRenderer.ShowConfirmation {
@@ -125,6 +108,7 @@ func RenderTui(params *GlobalRendererParams) {
 				}
 
 				currentlySelectedTab := getCurrentTabName(globalRenderer.TabPaneWidget.ActiveTabIndex)
+				// FIX: Don't generate SQL for entities twice. Use a map[entityName]bool to not generate the same SQL twice.
 				currentlySelectedEntityName := utils.ExtractExpressions(globalRenderer.DiffWidget.Rows[globalRenderer.DiffWidget.SelectedRow], "\\[(.*?)\\]")[0]
 
 				// This is the status of the entity (created, deleted, modified)
@@ -139,77 +123,80 @@ func RenderTui(params *GlobalRendererParams) {
 
 				sql := sequelizer.PatchSqlForEntity(params.FirstDb, params.SecondDb, currentlySelectedTab, currentlySelectedEntityName, entityStatus)
 
-				globalRenderer.SqlWidget.Rows = append(globalRenderer.SqlWidget.Rows, sql)
+				globalRenderer.SqlWidget.Text += sql + "\n\n"
 			} else if globalRenderer.FocusedWidget == globalRenderer.SqlWidget {
-				if len(globalRenderer.SqlWidget.Rows) == 0 { // List of entities is empty.
+				if globalRenderer.SqlWidget.Text == "" { // List of entities is empty.
 					continue
 				}
 
-				selectedSqlForCopy := globalRenderer.SqlWidget.Rows[globalRenderer.SqlWidget.SelectedRow]
+				sql := globalRenderer.SqlWidget.Text
 
-				err := clipboard.WriteAll(selectedSqlForCopy)
+				err := clipboard.WriteAll(sql)
 				if err != nil {
 					optErrPrompt = safego.Some("[Error copying to clipboard: " + err.Error() + "](fg:red)")
 				} else {
-					optErrPrompt = safego.Some("[Copied selected SQL to clipboard.](fg:green)")
+					optErrPrompt = safego.Some("[Copied entire generated SQL to clipboard.](fg:green)")
 				}
 			}
 
 			globalRenderer.Render(optErrPrompt)
 
 		}
+		// FEAT: Add "y" and make it yank the generated SQL also
 		if event.Type == termui.KeyboardEvent && ((event.ID == "j") || (event.ID == "<Down>")) {
-			focusedWidget := globalRenderer.FocusedWidget
-
-			if len(focusedWidget.Rows) != 0 {
-				focusedWidget.ScrollDown()
-				globalRenderer.Render(safego.None[string]())
+			switch globalRenderer.FocusedWidget.(type) {
+			case *widgets.List:
+				if len(globalRenderer.FocusedWidget.(*widgets.List).Rows) != 0 {
+					globalRenderer.FocusedWidget.(*widgets.List).ScrollDown()
+					globalRenderer.Render(safego.None[string]())
+				}
 			}
 		}
 		if event.Type == termui.KeyboardEvent && ((event.ID == "k") || (event.ID == "<Up>")) {
-			focusedWidget := globalRenderer.FocusedWidget
-
-			if len(focusedWidget.Rows) != 0 {
-				focusedWidget.ScrollUp()
-				globalRenderer.Render(safego.None[string]())
+			switch globalRenderer.FocusedWidget.(type) {
+			case *widgets.List:
+				if len(globalRenderer.FocusedWidget.(*widgets.List).Rows) != 0 {
+					globalRenderer.FocusedWidget.(*widgets.List).ScrollUp()
+					globalRenderer.Render(safego.None[string]())
+				}
 			}
 		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "<C-d>") {
-			focusedWidget := globalRenderer.FocusedWidget
-
-			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				focusedWidget.ScrollHalfPageDown()
-				globalRenderer.Render(safego.None[string]())
+			switch globalRenderer.FocusedWidget.(type) {
+			case *widgets.List:
+				if len(globalRenderer.FocusedWidget.(*widgets.List).Rows) != 0 {
+					globalRenderer.FocusedWidget.(*widgets.List).ScrollHalfPageDown()
+					globalRenderer.Render(safego.None[string]())
+				}
 			}
 		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "<C-u>") {
-			focusedWidget := globalRenderer.FocusedWidget
-
-			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				focusedWidget.ScrollHalfPageUp()
-				globalRenderer.Render(safego.None[string]())
+			switch globalRenderer.FocusedWidget.(type) {
+			case *widgets.List:
+				if len(globalRenderer.FocusedWidget.(*widgets.List).Rows) != 0 {
+					globalRenderer.FocusedWidget.(*widgets.List).ScrollHalfPageUp()
+					globalRenderer.Render(safego.None[string]())
+				}
 			}
 		}
-		if event.Type == termui.KeyboardEvent && (event.ID == "g") {
-			focusedWidget := globalRenderer.FocusedWidget
-
-			focusedWidget.ScrollTop()
-			globalRenderer.Render(safego.None[string]())
-		}
-		if event.Type == termui.KeyboardEvent && (event.ID == "<Home>") {
-			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				focusedWidget := globalRenderer.FocusedWidget
-
-				focusedWidget.ScrollTop()
-				globalRenderer.Render(safego.None[string]())
+		if event.Type == termui.KeyboardEvent && (event.ID == "g") || (event.ID == "<Home>") {
+			switch globalRenderer.FocusedWidget.(type) {
+			case *widgets.List:
+				if len(globalRenderer.FocusedWidget.(*widgets.List).Rows) != 0 {
+					globalRenderer.FocusedWidget.(*widgets.List).ScrollTop()
+					globalRenderer.Render(safego.None[string]())
+				}
 			}
 		}
 		if event.Type == termui.KeyboardEvent && ((event.ID == "G") || (event.ID == "<End>")) {
 			if len(globalRenderer.DiffWidget.Rows) != 0 {
-				focusedWidget := globalRenderer.FocusedWidget
-
-				focusedWidget.ScrollBottom()
-				globalRenderer.Render(safego.None[string]())
+				switch globalRenderer.FocusedWidget.(type) {
+				case *widgets.List:
+					if len(globalRenderer.FocusedWidget.(*widgets.List).Rows) != 0 {
+						globalRenderer.FocusedWidget.(*widgets.List).ScrollBottom()
+						globalRenderer.Render(safego.None[string]())
+					}
+				}
 			}
 		}
 	}
