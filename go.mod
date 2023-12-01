@@ -14,7 +14,7 @@ require (
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/atotto/clipboard v0.1.4
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/go-openapi/errors v0.20.4 // indirect
 	github.com/go-openapi/strfmt v0.21.7 // indirect

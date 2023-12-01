@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/Okira-E/patchi/pkg/config"
 	"github.com/Okira-E/patchi/pkg/prompts"
 	"github.com/Okira-E/patchi/pkg/tui"
+	"github.com/Okira-E/patchi/pkg/tui/patchi_renderer"
 	"github.com/Okira-E/patchi/pkg/types"
 	"github.com/Okira-E/patchi/pkg/utils"
 	"github.com/Okira-E/patchi/pkg/vars/colors"
@@ -35,23 +37,23 @@ migrating database environments.
 
 		firstDbConnection, errOpt := firstDbConnectionInfo.Connect()
 		if errOpt.IsSome() {
-			utils.Abort(fmt.Sprintf("Error connecting to %s: %s", firstDbConnectionInfo, errOpt.Unwrap()))
+			utils.Abort(fmt.Sprintf("Error connecting to %s: %s", firstDbConnectionInfo.DatabaseName, errOpt.Unwrap()))
 		}
 		defer func() {
 			err := firstDbConnection.Close()
 			if err != nil {
-				utils.Abort(fmt.Sprintf("Error closing connection to %s: %s", firstDbConnectionInfo, err))
+				utils.Abort(fmt.Sprintf("Error closing connection to %s: %s", firstDbConnectionInfo.DatabaseName, err))
 			}
 		}()
 
 		secondDbConnection, errOpt := secondDbConnectionInfo.Connect()
 		if errOpt.IsSome() {
-			utils.Abort(fmt.Sprintf("Error connecting to %s: %s", secondDbConnectionInfo, errOpt.Unwrap()))
+			utils.Abort(fmt.Sprintf("Error connecting to %s: %s", secondDbConnectionInfo.DatabaseName, errOpt.Unwrap()))
 		}
 		defer func() {
 			err := secondDbConnection.Close()
 			if err != nil {
-				utils.Abort(fmt.Sprintf("Error closing connection to %s: %s", secondDbConnectionInfo, err))
+				utils.Abort(fmt.Sprintf("Error closing connection to %s: %s", secondDbConnectionInfo.DatabaseName, err))
 			}
 		}()
 
@@ -63,7 +65,7 @@ migrating database environments.
 			utils.Abort(fmt.Sprintf("Failed to ping the \"%s\" database", secondDbConnectionInfo.Name))
 		}
 
-		params := &tui.GlobalRendererParams{
+		params := &patchi_renderer.PatchiRendererParams {
 			FirstDb: types.DbConnection{
 				Info:          firstDbConnectionInfo,
 				SqlConnection: firstDbConnection,
