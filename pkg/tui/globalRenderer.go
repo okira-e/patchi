@@ -107,8 +107,7 @@ func NewGlobalRenderer(params *GlobalRendererParams) *GlobalRenderer {
 		`<[ | Left>` + "\t \t \t \t \t to move to the previous tab.",
 		`<] | Right>` + "\t \t \t \t to move to the next tab.",
 		`[<Tab>](fg:green)` + "\t \t \t \t \t \t \t \t \t \t to move between the diff and sql widgets.",
-		`[<Enter>](fg:green)` + "\t \t \t \t \t \t \t \t on the SQL widget to copy the selected SQL to the clipboard.",
-		`[<Ctrl+a>](fg:green)` + "\t \t \t \t \t \t \t on the SQL widget to copy all SQL to the clipboard.",
+		`[<Enter>](fg:green)` + "\t \t \t \t \t \t \t \t on the SQL widget to copy the SQL",
 	}
 
 	globalRenderer.confirmationWidget.BorderTop = false

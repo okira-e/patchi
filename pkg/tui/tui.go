@@ -34,6 +34,8 @@ func RenderTui(params *GlobalRendererParams) {
 
 	globalRenderer.Render(safego.None[string]())
 
+	alreadyRenderedEntities := map[string]bool{}
+
 	for event := range termui.PollEvents() {
 
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Escape>") {
@@ -89,6 +91,7 @@ func RenderTui(params *GlobalRendererParams) {
 
 			globalRenderer.Render(safego.None[string]())
 		}
+		// BUG: Pressing Enter activates all the tabs.
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Enter>") {
 			// Responsible for:
 			// - Diff widget -> Generates the unsynced entrie names (tables, columns, views, ..etc)
@@ -108,22 +111,26 @@ func RenderTui(params *GlobalRendererParams) {
 				}
 
 				currentlySelectedTab := getCurrentTabName(globalRenderer.TabPaneWidget.ActiveTabIndex)
-				// FIX: Don't generate SQL for entities twice. Use a map[entityName]bool to not generate the same SQL twice.
 				currentlySelectedEntityName := utils.ExtractExpressions(globalRenderer.DiffWidget.Rows[globalRenderer.DiffWidget.SelectedRow], "\\[(.*?)\\]")[0]
 
-				// This is the status of the entity (created, deleted, modified)
-				entityStatus := utils.ExtractExpressions(globalRenderer.DiffWidget.Rows[globalRenderer.DiffWidget.SelectedRow], "fg:(.*?)\\)")[0]
-				if entityStatus == "green" {
-					entityStatus = "created"
-				} else if entityStatus == "red" {
-					entityStatus = "deleted"
-				} else {
-					entityStatus = "modified"
+				if ok, _ := alreadyRenderedEntities[currentlySelectedEntityName]; !ok { // Check if we already generated the SQL for this entity.
+
+					// This is the status of the entity (created, deleted, modified)
+					entityStatus := utils.ExtractExpressions(globalRenderer.DiffWidget.Rows[globalRenderer.DiffWidget.SelectedRow], "fg:(.*?)\\)")[0]
+					if entityStatus == "green" {
+						entityStatus = "created"
+					} else if entityStatus == "red" {
+						entityStatus = "deleted"
+					} else {
+						entityStatus = "modified"
+					}
+
+					generatedSql := sequelizer.PatchSqlForEntity(params.FirstDb, params.SecondDb, currentlySelectedTab, currentlySelectedEntityName, entityStatus)
+
+					globalRenderer.SqlWidget.Text += generatedSql + "\n\n"
+
+					alreadyRenderedEntities[currentlySelectedEntityName] = true
 				}
-
-				sql := sequelizer.PatchSqlForEntity(params.FirstDb, params.SecondDb, currentlySelectedTab, currentlySelectedEntityName, entityStatus)
-
-				globalRenderer.SqlWidget.Text += sql + "\n\n"
 			} else if globalRenderer.FocusedWidget == globalRenderer.SqlWidget {
 				if globalRenderer.SqlWidget.Text == "" { // List of entities is empty.
 					continue
