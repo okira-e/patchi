@@ -109,7 +109,7 @@ func NewPatchiRenderer(params *PatchiRendererParams) *PatchiRenderer {
 		`<[ | Left>` + "\t \t \t \t \t to move to the previous tab.",
 		`<] | Right>` + "\t \t \t \t to move to the next tab.",
 		`[<Tab>](fg:green)` + "\t \t \t \t \t \t \t \t \t \t to move between the diff and sql widgets.",
-		`[<Enter>](fg:green)` + "\t \t \t \t \t \t \t \t on the SQL widget to copy the SQL",
+		`[<Enter>](fg:green)` + "\t \t \t \t \t \t \t \t on the SQL widget to copy the SQL.",
 	}
 
 	patchiRenderer.confirmationWidget.BorderTop = false
@@ -194,7 +194,9 @@ func (self *PatchiRenderer) HandleActionOnEnter() {
 				entityStatus = "modified"
 			}
 
-			generatedSql := sequelizer.PatchSqlForEntity(self.params.FirstDb, self.params.SecondDb, currentlySelectedTab, currentlySelectedEntityName, entityStatus)
+			dialect := self.params.FirstDb.Info.Dialect
+
+			generatedSql := sequelizer.GenerateSqlForEntity(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, currentlySelectedTab, currentlySelectedEntityName, entityStatus)
 
 			self.SqlWidget.Text += generatedSql + "\n\n"
 
@@ -228,7 +230,7 @@ func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 		self.DiffWidget.Title = "Tables"
 
 		if !self.ShowConfirmation && len(self.tabsData[0]) == 0 {
-			diffResult := difftool.GetDiffInTablesBetweenSchemas(&self.params.FirstDb, &self.params.SecondDb)
+			diffResult := difftool.GetDiff(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, "tables", self.params.FirstDb.Info.Dialect)
 
 			self.MessageBarWidget.Text = "Found " + strconv.Itoa(len(diffResult)) + " changes in " + strings.ToLower(self.DiffWidget.Title) + "."
 

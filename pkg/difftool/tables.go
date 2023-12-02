@@ -7,12 +7,12 @@ import (
 	"github.com/Okira-E/patchi/pkg/utils"
 )
 
-// GetDiffInTablesBetweenSchemas represents the tables out of sync between two databases.
-func GetDiffInTablesBetweenSchemas(firstDb *types.DbConnection, secondDb *types.DbConnection) []types.TableDiff {
+// getDiffInTables represents the tables out of sync between two databases.
+func getDiffInTables(firstDb *sql.DB, secondDb *sql.DB, dialect string) []types.TableDiff {
 	ret := []types.TableDiff{}
 
-	tablesInFirstDb := getAllTablesNamesInDb(firstDb.SqlConnection)
-	tablesInSecondDb := getAllTablesNamesInDb(secondDb.SqlConnection)
+	tablesInFirstDb := getAllTablesNamesInDb(firstDb, dialect)
+	tablesInSecondDb := getAllTablesNamesInDb(secondDb, dialect)
 
 	// Compare the two arrays of table names and return the difference.
 	// Tables that exist in the first database but not in the second database must have been created.
@@ -50,21 +50,24 @@ func GetDiffInTablesBetweenSchemas(firstDb *types.DbConnection, secondDb *types.
 }
 
 // getAllTablesNamesInDb returns an array of table names retrieved from given database connection.
-func getAllTablesNamesInDb(db *sql.DB) []string {
-	rows, err := db.Query("SHOW TABLES")
-	if err != nil {
-		utils.Abort(fmt.Sprintf("Error querying database: %s", err.Error()))
-	}
-
+func getAllTablesNamesInDb(db *sql.DB, dialect string) []string {
 	ret := []string{}
-	for rows.Next() {
-		var table string
-		err := rows.Scan(&table)
+
+	if dialect == "mysql" || dialect == "mariadb" || dialect == "postgres" || dialect == "cockroachdb" {
+		rows, err := db.Query("SHOW TABLES")
 		if err != nil {
-			utils.Abort(fmt.Sprintf("Error scanning row: %s", err.Error()))
+			utils.Abort(fmt.Sprintf("Error querying database: %s", err.Error()))
 		}
 
-		ret = append(ret, table)
+		for rows.Next() {
+			var table string
+			err := rows.Scan(&table)
+			if err != nil {
+				utils.Abort(fmt.Sprintf("Error scanning row: %s", err.Error()))
+			}
+
+			ret = append(ret, table)
+		}
 	}
 
 	return ret
