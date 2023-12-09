@@ -179,7 +179,7 @@ func (self *PatchiRenderer) HandleActionOnEnter() {
 		// generate the SQL for this entity (an entity could be a name of table that is created for example) based on its 
 		// type (table, column, ..etc).
 
-		currentlySelectedTab := getTabNameBasedOnIndex(self.TabPaneWidget.ActiveTabIndex)
+		currentlySelectedTab := getTabNameBasedOnIndex(self.TabPaneWidget.ActiveTabIndex) // tables, columns, views, ..
 		currentlySelectedEntityName := utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "\\[(.*?)\\]")[0]
 
 		if ok, _ := self.alreadyRenderedEntities[currentlySelectedEntityName]; !ok { // Check if we already generated the SQL for this entity.

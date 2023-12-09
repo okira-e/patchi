@@ -53,21 +53,51 @@ func getDiffInTables(firstDb *sql.DB, secondDb *sql.DB, dialect string) []types.
 func getAllTablesNamesInDb(db *sql.DB, dialect string) []string {
 	ret := []string{}
 
-	if dialect == "mysql" || dialect == "mariadb" || dialect == "postgres" || dialect == "cockroachdb" {
-		rows, err := db.Query("SHOW TABLES")
+	if dialect == "mysql" || dialect == "mariadb" {
+		ret = getAllTablesNamesInMysql(db, dialect)
+	} else if dialect == "postgres" || dialect == "cockroachdb" {
+		ret = getAllTablesNamesInPostgres(db, dialect)
+	}
+	return ret
+}
+
+func getAllTablesNamesInMysql(db *sql.DB, dialect string) []string {
+	ret := []string{}
+
+	rows, err := db.Query("SHOW TABLES")
+	if err != nil {
+		utils.Abort(fmt.Sprintf("Error querying database: %s", err.Error()))
+	}
+
+	for rows.Next() {
+		var tableName string
+		err := rows.Scan(&tableName)
 		if err != nil {
-			utils.Abort(fmt.Sprintf("Error querying database: %s", err.Error()))
+			utils.Abort(fmt.Sprintf("Error scanning row: %s", err.Error()))
 		}
 
-		for rows.Next() {
-			var table string
-			err := rows.Scan(&table)
-			if err != nil {
-				utils.Abort(fmt.Sprintf("Error scanning row: %s", err.Error()))
-			}
+		ret = append(ret, tableName)
+	}
 
-			ret = append(ret, table)
+	return ret
+}
+
+func getAllTablesNamesInPostgres(db *sql.DB, dialect string) []string {
+	ret := []string{}
+
+	rows, err := db.Query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+	if err != nil {
+		utils.Abort(fmt.Sprintf("Error querying database: %s", err.Error()))
+	}
+
+	for rows.Next() {
+		var tableName string
+		err := rows.Scan(&tableName)
+		if err != nil {
+			utils.Abort(fmt.Sprintf("Error scanning row: %s", err.Error()))
 		}
+
+		ret = append(ret, tableName)
 	}
 
 	return ret
