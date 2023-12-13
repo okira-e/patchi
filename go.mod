@@ -3,6 +3,7 @@ module github.com/Okira-E/patchi
 go 1.20
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/cockroachdb/cockroach-go/v2 v2.3.5
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/go-sql-driver/mysql v1.7.1
@@ -14,7 +15,6 @@ require (
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/atotto/clipboard v0.1.4
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/go-openapi/errors v0.20.4 // indirect
 	github.com/go-openapi/strfmt v0.21.7 // indirect
