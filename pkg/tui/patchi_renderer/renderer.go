@@ -135,7 +135,7 @@ func (self *PatchiRenderer) ResizeWidgets(width int, height int) {
 
 	messageBarHeight := height / 35
 
-	self.TabPaneWidget.SetRect(0, 0, width/2, height/tabPaneHeight) // FIX: Put a limit on the height of the tab pane.
+	self.TabPaneWidget.SetRect(0, 0, width/2, height/tabPaneHeight)
 	self.DiffWidget.SetRect(0, height/tabPaneHeight, width/2, height-(messageBarHeight))
 	self.SqlWidget.SetRect(width/2, 0, width, height-(messageBarHeight))
 	self.MessageBarWidget.SetRect(0, height-(messageBarHeight), width, height)
