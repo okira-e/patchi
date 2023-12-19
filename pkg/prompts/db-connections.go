@@ -18,7 +18,7 @@ func PromptForDbConnections(userConfig types.UserConfig) (*types.DbConnectionInf
 		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some("only one connection found. Please add another connection to compare against")
 	}
 
-	utils.PrintInColor(colors.Cyan, "Choose the connections from the list below to compare:")
+	utils.PrintInColor(colors.Cyan, "Choose the connections from the list below to compare:", false)
 
 	allConnectionNames := []string{}
 	for connectionName, _ := range userConfig.DbConnections {
@@ -37,7 +37,7 @@ func PromptForDbConnections(userConfig types.UserConfig) (*types.DbConnectionInf
 		return &types.DbConnectionInfo{}, &types.DbConnectionInfo{}, safego.Some(err.Error())
 	}
 
-	utils.PrintInColor(colors.Cyan, "Choose the second database (The dialect must be the same as the first one):")
+	utils.PrintInColor(colors.Cyan, "Choose the second database (The dialect must be the same as the first one):", false)
 
 	// Filter out the first selected connection from the list of connections for the second
 	// prompt (We don't want to compare a database with itself.)

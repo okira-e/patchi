@@ -14,10 +14,9 @@ var AddConnectionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		errOpt := config.AddDbConnection()
 		if errOpt.IsSome() {
-			utils.PrintInColor(colors.Red, errOpt.Unwrap().Error())
-			return
+			utils.Abort(errOpt.Unwrap().Error())
 		}
 
-		utils.PrintInColor(colors.Green, "Connection added successfully.")
+		utils.PrintInColor(colors.Green, "Connection added successfully.", false)
 	},
 }

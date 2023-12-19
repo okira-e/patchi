@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/Okira-E/patchi/pkg/config"
 	"github.com/Okira-E/patchi/pkg/utils"
 	"github.com/Okira-E/patchi/pkg/vars/colors"
@@ -36,17 +37,15 @@ var RmConnectionCmd = &cobra.Command{
 
 			connectionName, err = namePrmpt.Run()
 			if err != nil {
-				utils.PrintInColor(colors.Red, err.Error())
-				return
+				utils.Abort(err.Error())
 			}
 		}
 
 		errOpt := config.RmConnection(connectionName)
 		if errOpt.IsSome() {
-			utils.PrintInColor(colors.Red, errOpt.Unwrap().Error())
-			return
+			utils.Abort(errOpt.Unwrap().Error())
 		}
 
-		utils.PrintInColor(colors.Green, "Connection "+connectionName+" removed successfully.")
+		utils.PrintInColor(colors.Green, "Connection "+connectionName+" removed successfully.", false)
 	},
 }

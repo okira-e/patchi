@@ -9,7 +9,6 @@ import (
 	"github.com/Okira-E/patchi/pkg/tui/patchi_renderer"
 	"github.com/Okira-E/patchi/pkg/types"
 	"github.com/Okira-E/patchi/pkg/utils"
-	"github.com/Okira-E/patchi/pkg/vars/colors"
 	"github.com/spf13/cobra"
 )
 
@@ -23,16 +22,12 @@ migrating database environments.
 	Run: func(cmd *cobra.Command, args []string) {
 		userConfig, errOpt := config.GetUserConfig()
 		if errOpt.IsSome() {
-			utils.PrintInColor(colors.Red, errOpt.Unwrap().Error())
-
-			return
+			utils.Abort(errOpt.Unwrap().Error())
 		}
 
 		firstDbConnectionInfo, secondDbConnectionInfo, errMsgOpt := prompts.PromptForDbConnections(userConfig)
 		if errMsgOpt.IsSome() {
-			utils.PrintInColor(colors.Red, errMsgOpt.Unwrap())
-
-			return
+			utils.Abort(errOpt.Unwrap().Error())
 		}
 
 		firstDbConnection, errOpt := firstDbConnectionInfo.Connect()
