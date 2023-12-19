@@ -21,16 +21,6 @@ const (
 
 var focusedWidgetBorderStyle = termui.NewStyle(termui.ColorGreen)
 
-type PatchiRendererParams struct {
-	FirstDb  types.DbConnection
-	SecondDb types.DbConnection
-}
-
-type tabData struct {
-	ShowConfirmation bool
-	data             []string
-}
-
 // PatchiRenderer is a unit that knows about all the widgets that need to be rendered.
 // rendering the TUI should always be done by calling the `render` method.
 type PatchiRenderer struct {
@@ -385,6 +375,16 @@ func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 		self.confirmationWidget,
 		self.HelpWidget,
 	)
+}
+
+type PatchiRendererParams struct {
+	FirstDb  types.DbConnection
+	SecondDb types.DbConnection
+}
+
+type tabData struct {
+	ShowConfirmation bool
+	data             []string
 }
 
 func getTabNameBasedOnIndex(index int) string {
