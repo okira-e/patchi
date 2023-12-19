@@ -15,11 +15,20 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 )
 
+const (
+	defaultBarMsg = "Press <h> or <?> for help."
+)
+
 var focusedWidgetBorderStyle = termui.NewStyle(termui.ColorGreen)
 
 type PatchiRendererParams struct {
 	FirstDb  types.DbConnection
 	SecondDb types.DbConnection
+}
+
+type tabData struct {
+	ShowConfirmation bool
+	data             []string
 }
 
 // PatchiRenderer is a unit that knows about all the widgets that need to be rendered.
@@ -55,11 +64,11 @@ type PatchiRenderer struct {
 	// ShowHelpWidget determines if Render method needs to render HelpWidget or not.
 	ShowHelpWidget bool
 
-	// ShowConfirmation determines if Render method needs to render confirmationWidget or not.
-	ShowConfirmation bool
+	// alertMsg holds the alert message to the user if it is set.
+	alertMsg safego.Option[string]
 
 	// tabsData holds the data for each tab.
-	tabsData [6][]string
+	tabsData [6]tabData
 
 	// params holds the data parameters that are passed to the PatchiRenderer.
 	params *PatchiRendererParams
@@ -77,13 +86,14 @@ func NewPatchiRenderer(params *PatchiRendererParams) *PatchiRenderer {
 		MessageBarWidget:        widgets.NewParagraph(),
 		HelpWidget:              widgets.NewList(),
 		confirmationWidget:      widgets.NewParagraph(),
-		ShowConfirmation:        true,
+		alertMsg:                safego.None[string](),
 		params:                  params,
 		alreadyRenderedEntities: map[string]bool{},
 	}
 
 	patchiRenderer.FocusedWidget = patchiRenderer.DiffWidget
 
+	// Setup the initial design/styling of the widgets. Sizing is done in ResizeWidgets() or in Render().
 	patchiRenderer.DiffWidget.TextStyle = termui.NewStyle(termui.ColorWhite)
 	patchiRenderer.DiffWidget.SelectedRowStyle = termui.NewStyle(termui.ColorBlack, termui.ColorWhite)
 	patchiRenderer.DiffWidget.WrapText = true
@@ -97,7 +107,7 @@ func NewPatchiRenderer(params *PatchiRendererParams) *PatchiRenderer {
 	patchiRenderer.SqlWidget.Text = ""
 
 	patchiRenderer.MessageBarWidget.Border = false
-	patchiRenderer.MessageBarWidget.Text = `Press <h> or <?> for help.`
+	patchiRenderer.MessageBarWidget.Text = defaultBarMsg
 
 	patchiRenderer.HelpWidget.Title = "Help"
 	patchiRenderer.HelpWidget.SelectedRowStyle = termui.NewStyle(termui.ColorBlack, termui.ColorWhite)
@@ -116,6 +126,11 @@ func NewPatchiRenderer(params *PatchiRendererParams) *PatchiRenderer {
 
 	patchiRenderer.confirmationWidget.Text = "Press Enter to fetch changes."
 
+	// Set the ShowConfirmation flag to true on each view.
+	for i := 0; i < len(patchiRenderer.tabsData); i += 1 {
+		patchiRenderer.tabsData[i].ShowConfirmation = true
+	}
+
 	return patchiRenderer
 }
 
@@ -130,7 +145,7 @@ func (self *PatchiRenderer) ResizeWidgets(width int, height int) {
 
 	messageBarHeight := height / 35
 
-	self.TabPaneWidget.SetRect(0, 0, width/2, height/tabPaneHeight) // BUG: Put a limit on the height of the tab pane.
+	self.TabPaneWidget.SetRect(0, 0, width/2, height/tabPaneHeight) // FIX: Put a limit on the height of the tab pane.
 	self.DiffWidget.SetRect(0, height/tabPaneHeight, width/2, height-(messageBarHeight))
 	self.SqlWidget.SetRect(width/2, 0, width, height-(messageBarHeight))
 	self.MessageBarWidget.SetRect(0, height-(messageBarHeight), width, height)
@@ -166,37 +181,56 @@ func (self *PatchiRenderer) ToggleHelpWidget() {
 func (self *PatchiRenderer) HandleActionOnEnter() {
 	optErrPrompt := safego.None[string]()
 
-	if self.ShowConfirmation { // The user pressed <Enter> in the "Press Enter to start." stage.
+	if self.tabsData[self.TabPaneWidget.ActiveTabIndex].ShowConfirmation { // The user pressed <Enter> in the "Press Enter to start." stage.
 		// Setting this to false means that the Render method will not render the confirmation message (but instead
 		// render the actual db diff.)
-		self.ShowConfirmation = false
+		self.tabsData[self.TabPaneWidget.ActiveTabIndex].ShowConfirmation = false
 	} else if self.FocusedWidget == self.DiffWidget { // user pressed <Enter> on an entity off the list on the Diff view.
-		// May never happen but being paranoid is better than debugging a runtime error.
-		if len(self.DiffWidget.Rows) == 0 || len(utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "\\[(.*?)\\]")) == 0 {
+		if len(self.DiffWidget.Rows) == 0 {
 			return
 		}
 
-		// generate the SQL for this entity (an entity could be a name of table that is created for example) based on its 
-		// type (table, column, ..etc).
+		if len(self.DiffWidget.Rows) <= self.DiffWidget.SelectedRow {
+			return
+		}
+
+		if len(utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "\\[(.*?)\\]")) == 0 {
+			return
+		}
+
+		// generate the SQL for this entity (an entity could be a name of table that is created for example) based on its
+		// type (table, column, ..etc.)
 
 		currentlySelectedTab := getTabNameBasedOnIndex(self.TabPaneWidget.ActiveTabIndex) // tables, columns, views, ..
-		currentlySelectedEntityName := utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "\\[(.*?)\\]")[0]
+		currentlySelectedEntityName := utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "\\[(.*?)\\]")[0] // the name of the table or column..etc
 
 		if ok, _ := self.alreadyRenderedEntities[currentlySelectedEntityName]; !ok { // Check if we already generated the SQL for this entity.
-
 			// This is the status of the entity (created, deleted, modified)
 			entityStatus := utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "fg:(.*?)\\)")[0]
 			if entityStatus == "green" {
 				entityStatus = "created"
 			} else if entityStatus == "red" {
 				entityStatus = "deleted"
-			} else {
-				entityStatus = "modified"
 			}
 
 			dialect := self.params.FirstDb.Info.Dialect
 
-			generatedSql := sequelizer.GenerateSqlForEntity(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, currentlySelectedTab, currentlySelectedEntityName, entityStatus)
+			var generatedSql string
+			if currentlySelectedTab == "tables" {
+				generatedSql = sequelizer.GenerateSqlForTables(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, currentlySelectedEntityName, entityStatus)
+			} else if currentlySelectedTab == "columns" {
+				// Since the `currentlySelectedEntityName` for columns contain a "tableName → columnName" pattern.
+				// We need to extract the table name and column name using regex first.
+				extractedExpressions := strings.Fields(currentlySelectedEntityName)
+				tableName := extractedExpressions[0]
+				columnName := extractedExpressions[2]
+
+				var errMsg safego.Option[string]
+				generatedSql, errMsg = sequelizer.GenerateSqlForColumns(self.params.FirstDb, self.params.SecondDb, dialect, columnName, tableName, entityStatus)
+				if errMsg.IsSome() {
+					self.alert(errMsg.Unwrap())
+				}
+			}
 
 			self.SqlWidget.Text += generatedSql + "\n\n"
 
@@ -221,60 +255,83 @@ func (self *PatchiRenderer) HandleActionOnEnter() {
 
 }
 
-// RenderWidgets is the final step in each event. It choses what to show based on the state current of the app.
+// alert opens a pop-up to the user showing a message. Used to report errors that don't panic the app to the user.
+func (self *PatchiRenderer) alert(message string) {
+	self.alertMsg = safego.Some("[" + message + "](fg:red)")
+}
+
+// ResetMsgBar resets the user message in the bottom left to the default one.
+func (self *PatchiRenderer) ResetMsgBar() {
+	self.alertMsg = safego.Some(defaultBarMsg)
+}
+
+// RenderWidgets is the final step in each event. It chooses what to show based on the state current of the app.
 func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 	termui.Clear()
 
-	if self.TabPaneWidget.ActiveTabIndex == 0 { // Tables
+	tabName := getTabNameBasedOnIndex(self.TabPaneWidget.ActiveTabIndex)
 
-		self.DiffWidget.Title = "Tables"
+	self.DiffWidget.Title = utils.CapitalizeWord(tabName)
 
-		if !self.ShowConfirmation && len(self.tabsData[0]) == 0 {
-			diffResult := difftool.GetDiff(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, "tables", self.params.FirstDb.Info.Dialect)
+	var numberOfChangesForEachTabToBeLoggedToUser int
+	// Check this is the first time the user click "Enter" to generate the diff.
+	if !self.tabsData[self.TabPaneWidget.ActiveTabIndex].ShowConfirmation && len(self.tabsData[self.TabPaneWidget.ActiveTabIndex].data) == 0 {
 
-			self.MessageBarWidget.Text = "Found " + strconv.Itoa(len(diffResult)) + " changes in " + strings.ToLower(self.DiffWidget.Title) + "."
+		if self.TabPaneWidget.ActiveTabIndex == 0 { // Tables
+			// Get the diff data for the current tab that we're on.
+			diffResult := difftool.GetTablesDiff(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, self.params.FirstDb.Info.Dialect)
+
+			numberOfChangesForEachTabToBeLoggedToUser = len(diffResult)
 
 			for _, tableDiff := range diffResult {
 				text := "[" + tableDiff.TableName + "]"
-				if tableDiff.DiffType == "created" {
+				if tableDiff.DiffType == 1 {
 					text += "(fg:green)"
-				} else if tableDiff.DiffType == "deleted" {
+				} else if tableDiff.DiffType == 0 {
 					text += "(fg:red)"
 				}
 
 				self.DiffWidget.Rows = append(self.DiffWidget.Rows, text)
-				self.tabsData[0] = self.DiffWidget.Rows
+				self.tabsData[self.TabPaneWidget.ActiveTabIndex].data = self.DiffWidget.Rows
 			}
-		} else {
-			// No need to generate the SQL. It has already been generated and saved for this current tab.
-			self.DiffWidget.Rows = self.tabsData[0]
+
+		} else if self.TabPaneWidget.ActiveTabIndex == 1 { // Columns
+
+			diffResult, errOpt := difftool.GetColumnsDiff(self.params.FirstDb, self.params.SecondDb, self.params.FirstDb.Info.Dialect)
+			if errOpt.IsSome() {
+				self.alert("An error occurred while fetching the diff for the columns: " + errOpt.Unwrap().Error())
+			} else {
+
+				numberOfChangesForEachTabToBeLoggedToUser = len(diffResult)
+
+				for _, columnDiff := range diffResult {
+					text := "[" + columnDiff.TableName + " → " + columnDiff.ColumnName + "]"
+					if columnDiff.DiffType == 1 {
+						text += "(fg:green)"
+					} else if columnDiff.DiffType == 0 {
+						text += "(fg:red)"
+					}
+
+					self.DiffWidget.Rows = append(self.DiffWidget.Rows, text)
+					self.tabsData[self.TabPaneWidget.ActiveTabIndex].data = self.DiffWidget.Rows
+				}
+			}
+
+		} else if self.TabPaneWidget.ActiveTabIndex == 2 { // Views
+
+		} else if self.TabPaneWidget.ActiveTabIndex == 3 { // Procedures
+
+		} else if self.TabPaneWidget.ActiveTabIndex == 4 { // Functions
+
+		} else if self.TabPaneWidget.ActiveTabIndex == 5 { // Triggers
+
 		}
 
-	} else if self.TabPaneWidget.ActiveTabIndex == 1 { // Columns
-
-		self.DiffWidget.Title = "Columns"
-		self.DiffWidget.Rows = self.tabsData[1]
-
-	} else if self.TabPaneWidget.ActiveTabIndex == 2 { // Views
-
-		self.DiffWidget.Title = "Views"
-		self.DiffWidget.Rows = self.tabsData[2]
-
-	} else if self.TabPaneWidget.ActiveTabIndex == 3 { // Procedures
-
-		self.DiffWidget.Title = "Procedures"
-		self.DiffWidget.Rows = self.tabsData[3]
-
-	} else if self.TabPaneWidget.ActiveTabIndex == 4 { // Functions
-
-		self.DiffWidget.Title = "Functions"
-		self.DiffWidget.Rows = self.tabsData[4]
-
-	} else if self.TabPaneWidget.ActiveTabIndex == 5 { // Triggers
-
-		self.DiffWidget.Title = "Triggers"
-		self.DiffWidget.Rows = self.tabsData[5]
-
+		self.alertMsg = safego.None[string]()
+		self.MessageBarWidget.Text = "Found " + strconv.Itoa(numberOfChangesForEachTabToBeLoggedToUser) + " changes in " + strings.ToLower(self.DiffWidget.Title) + "."
+	} else {
+		// No need to generate the SQL. It has already been generated and saved for this current tab.
+		self.DiffWidget.Rows = self.tabsData[self.TabPaneWidget.ActiveTabIndex].data
 	}
 
 	// Set the currently focused widget's border style to be green.
@@ -308,11 +365,15 @@ func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 		self.HelpWidget.SetRect(0, 0, 0, 0)
 	}
 
-	if self.ShowConfirmation {
+	if self.tabsData[self.TabPaneWidget.ActiveTabIndex].ShowConfirmation {
 		diffWidgetRec := self.DiffWidget.GetRect()
 		self.confirmationWidget.SetRect(diffWidgetRec.Min.X, diffWidgetRec.Min.Y+1, diffWidgetRec.Max.X, diffWidgetRec.Max.Y)
 	} else {
 		self.confirmationWidget.SetRect(0, 0, 0, 0)
+	}
+
+	if self.alertMsg.IsSome() {
+		self.MessageBarWidget.Text = self.alertMsg.UnwrapOr("")
 	}
 
 	// Render the widgets.

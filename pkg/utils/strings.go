@@ -37,3 +37,12 @@ func RemoveChar(str *string, char byte) {
 		}
 	}
 }
+
+// CapitalizeWord capitalizes the first letter of a word.
+func CapitalizeWord(word string) string {
+	if len(word) == 0 {
+		return word
+	}
+
+	return string(word[0]-32) + word[1:]
+}

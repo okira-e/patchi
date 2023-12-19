@@ -9,22 +9,21 @@ import (
 	"github.com/Okira-E/patchi/pkg/utils"
 )
 
-// generateSqlForTables is the interface for generating SQL for tables in general.
-func generateSqlForTables(firstDb *sql.DB, secondDb *sql.DB, dialect string, entityType string, entityName string, status string) string {
+// GenerateSqlForTables is the interface for generating SQL for tables in general.
+func GenerateSqlForTables(firstDb *sql.DB, secondDb *sql.DB, dialect string, entityName string, status string) string {
 	var ret string
 
 	if dialect == "mysql" || dialect == "mariadb" {
-		ret = generateSqlForTablesMysql(firstDb, secondDb, entityType, entityName, status)
+		ret = generateSqlForTablesMysql(firstDb, secondDb, entityName, status)
 	} else if dialect == "postgres" || dialect == "cockroachdb" {
 		utils.AbortTui("UNIMPLEMENTED")
-		// ret = generateSqlForTablesPostgres(firstDb, secondDb, entityType, entityName, status) // Incomplete
 	}
 
 	return ret
 }
 
 // generateSqlForTablesMysql is responsible for generating SQL for tables in Mysql.
-func generateSqlForTablesMysql(firstDb *sql.DB, secondDb *sql.DB, entityType string, entityName string, status string) string {
+func generateSqlForTablesMysql(firstDb *sql.DB, secondDb *sql.DB, entityName string, status string) string {
 	var ret string
 
 	if status == "created" {
@@ -49,7 +48,7 @@ func generateSqlForTablesMysql(firstDb *sql.DB, secondDb *sql.DB, entityType str
 }
 
 // generateSqlForTablesPostgres is responsible for generating SQL for tables in Postgres.
-func generateSqlForTablesPostgres(firstDb *sql.DB, secondDb *sql.DB, entityType string, entityName string, status string) string {
+func generateSqlForTablesPostgres(firstDb *sql.DB, secondDb *sql.DB, entityName string, status string) string {
 	var ret string
 
 	if status == "created" {
@@ -127,8 +126,6 @@ func generateSqlForTablesPostgres(firstDb *sql.DB, secondDb *sql.DB, entityType 
 		}
 
 		createTableStatement += "\n);"
-
-		fmt.Println(createTableStatement)
 	} else if status == "deleted" {
 		ret = "DROP TABLE IF EXISTS `" + entityName + "`;"
 	}

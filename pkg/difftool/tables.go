@@ -3,13 +3,21 @@ package difftool
 import (
 	"database/sql"
 	"fmt"
-	"github.com/Okira-E/patchi/pkg/types"
+
 	"github.com/Okira-E/patchi/pkg/utils"
 )
 
-// getDiffInTables represents the tables out of sync between two databases.
-func getDiffInTables(firstDb *sql.DB, secondDb *sql.DB, dialect string) []types.TableDiff {
-	ret := []types.TableDiff{}
+type tableDiff struct {
+	TableName string
+	// DiffType represents the type of change that has occurred to the entity.
+	// 0 -> Deleted.
+	// 1 -> Created.
+	DiffType int8
+}
+
+// GetTablesDiff returns the tables out of sync between two databases.
+func GetTablesDiff(firstDb *sql.DB, secondDb *sql.DB, dialect string) []tableDiff {
+	ret := []tableDiff{}
 
 	tablesInFirstDb := getAllTablesNamesInDb(firstDb, dialect)
 	tablesInSecondDb := getAllTablesNamesInDb(secondDb, dialect)
@@ -30,18 +38,18 @@ func getDiffInTables(firstDb *sql.DB, secondDb *sql.DB, dialect string) []types.
 
 	for _, tableName := range tablesInFirstDb {
 		if _, ok := secondDbTablesBookKeeping[tableName]; !ok {
-			ret = append(ret, types.TableDiff{
+			ret = append(ret, tableDiff{
 				TableName: tableName,
-				DiffType:  "created",
+				DiffType:  1,
 			})
 		}
 	}
 
 	for _, tableName := range tablesInSecondDb {
 		if _, ok := firstDbTablesBookKeeping[tableName]; !ok {
-			ret = append(ret, types.TableDiff{
+			ret = append(ret, tableDiff{
 				TableName: tableName,
-				DiffType:  "deleted",
+				DiffType:  0,
 			})
 		}
 	}

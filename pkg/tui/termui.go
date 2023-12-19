@@ -73,10 +73,12 @@ func RenderTui(params *patchi_renderer.PatchiRendererParams) {
 		if event.Type == termui.KeyboardEvent && (event.ID == "]" || event.ID == "<Right>" || event.ID == "l") {
 			// FEAT: Going to the right of the last option should bring you back. The opposite is true.
 			patchiRenderer.TabPaneWidget.FocusRight()
+			patchiRenderer.ResetMsgBar()
 			patchiRenderer.RenderWidgets(safego.None[string]())
 		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "[" || event.ID == "<Left>" || event.ID == "h") {
 			patchiRenderer.TabPaneWidget.FocusLeft()
+			patchiRenderer.ResetMsgBar()
 			patchiRenderer.RenderWidgets(safego.None[string]())
 		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Tab>") {
@@ -88,7 +90,6 @@ func RenderTui(params *patchi_renderer.PatchiRendererParams) {
 
 			patchiRenderer.RenderWidgets(safego.None[string]())
 		}
-		// BUG: Pressing Enter activates all the tabs.
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Enter>") {
 			patchiRenderer.HandleActionOnEnter()
 		}
