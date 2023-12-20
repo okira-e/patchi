@@ -28,16 +28,6 @@ func ExtractExpressions(str string, expr string) []string {
 	return result
 }
 
-// RemoveChar removes all occurrences of a character from a string.
-func RemoveChar(str *string, char byte) {
-	for i := 0; i < len(*str); i++ {
-		if (*str)[i] == char {
-			*str = (*str)[:i] + (*str)[i+1:]
-			i--
-		}
-	}
-}
-
 // CapitalizeWord capitalizes the first letter of a word.
 func CapitalizeWord(word string) string {
 	if len(word) == 0 {
