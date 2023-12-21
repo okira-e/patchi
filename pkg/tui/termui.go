@@ -90,6 +90,13 @@ func RenderTui(params *patchi_renderer.PatchiRendererParams) {
 
 			patchiRenderer.RenderWidgets(safego.None[string]())
 		}
+		if event.Type == termui.KeyboardEvent && (event.ID == "a") {
+			if patchiRenderer.FocusedWidget == patchiRenderer.DiffWidget {
+				patchiRenderer.GenerateSqlForAllEntities()
+			}
+
+			patchiRenderer.RenderWidgets(safego.None[string]())
+		}
 		if event.Type == termui.KeyboardEvent && (event.ID == "<Enter>") {
 			patchiRenderer.HandleActionOnEnter()
 		}

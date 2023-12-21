@@ -64,7 +64,7 @@ type PatchiRenderer struct {
 	params *PatchiRendererParams
 
 	// alreadyRenderedEntities Makes sure that we don't generate SQL for an entity twice.
-	alreadyRenderedEntities map[string]bool
+	alreadyRenderedEntities map[string]map[string]bool
 }
 
 // NewPatchiRenderer creates a new instance of CompareRootRenderer.
@@ -78,8 +78,16 @@ func NewPatchiRenderer(params *PatchiRendererParams) *PatchiRenderer {
 		confirmationWidget:      widgets.NewParagraph(),
 		alertMsg:                safego.None[string](),
 		params:                  params,
-		alreadyRenderedEntities: map[string]bool{},
+		alreadyRenderedEntities: map[string]map[string]bool{},
 	}
+
+	// Initialize the map of maps with default values because an empty map is nil in Go for some reason.
+	patchiRenderer.alreadyRenderedEntities["tables"] = map[string]bool{}
+	patchiRenderer.alreadyRenderedEntities["columns"] = map[string]bool{}
+	patchiRenderer.alreadyRenderedEntities["views"] = map[string]bool{}
+	patchiRenderer.alreadyRenderedEntities["procedures"] = map[string]bool{}
+	patchiRenderer.alreadyRenderedEntities["functions"] = map[string]bool{}
+	patchiRenderer.alreadyRenderedEntities["triggers"] = map[string]bool{}
 
 	patchiRenderer.FocusedWidget = patchiRenderer.DiffWidget
 
@@ -110,6 +118,7 @@ func NewPatchiRenderer(params *PatchiRendererParams) *PatchiRenderer {
 		`<] | Right>` + "\t \t \t \t to move to the next tab.",
 		`[<Tab>](fg:green)` + "\t \t \t \t \t \t \t \t \t \t to move between the diff and sql widgets.",
 		`[<Enter>](fg:green)` + "\t \t \t \t \t \t \t \t on the SQL widget to copy the SQL.",
+		`[<a>](fg:green)` + "\t \t \t \t \t \t \t \t \t \t \t \t on any tab to generate all the SQL at once.",
 	}
 
 	patchiRenderer.confirmationWidget.BorderTop = false
@@ -166,6 +175,83 @@ func (self *PatchiRenderer) ToggleHelpWidget() {
 	}
 }
 
+func (self *PatchiRenderer) generateSqlFor(entityType string, entityRow string) string {
+	// This is the status of the entity (created, deleted, modified)
+	entityStatus := utils.ExtractExpressions(entityRow, "fg:(.*?)\\)")[0]
+	if entityStatus == "green" {
+		entityStatus = "created"
+	} else if entityStatus == "red" {
+		entityStatus = "deleted"
+	}
+
+	dialect := self.params.FirstDb.Info.Dialect
+
+	// Extract the name from the row. `[users](fg:green)` -> `users` .
+	entityName := utils.ExtractExpressions(entityRow, "\\[(.*?)\\]")[0]
+
+	var generatedSql string
+	if entityType == "tables" {
+
+		generatedSql = sequelizer.GenerateSqlForTables(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+
+	} else if entityType == "columns" {
+
+		// Since the `currentlySelectedEntityName` for columns contain a "tableName → columnName" pattern.
+		// We need to extract the table name and column name using regex first.
+		extractedExpressions := strings.Fields(entityName)
+		tableName := extractedExpressions[0]
+		columnName := extractedExpressions[2]
+
+		var errMsg safego.Option[string]
+		generatedSql, errMsg = sequelizer.GenerateSqlForColumns(self.params.FirstDb, self.params.SecondDb, dialect, columnName, tableName, entityStatus)
+		if errMsg.IsSome() {
+			self.alert(errMsg.Unwrap())
+		}
+
+	}
+
+	return generatedSql
+}
+
+func (self *PatchiRenderer) GenerateSqlForAllEntities() {
+	var generatedSql string
+
+	if len(self.DiffWidget.Rows) == 0 {
+		return
+	}
+
+	if len(self.DiffWidget.Rows) <= self.DiffWidget.SelectedRow {
+		return
+	}
+
+	if len(utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "\\[(.*?)\\]")) == 0 {
+		return
+	}
+
+	currentlySelectedTab := getTabNameBasedOnIndex(self.TabPaneWidget.ActiveTabIndex) // tables, columns, views, ..
+	for i, entityRow := range self.DiffWidget.Rows {
+		entityNameExtracted := utils.ExtractExpressions(entityRow, "\\[(.*?)\\]")[0]
+
+		if ok, _ := self.alreadyRenderedEntities[currentlySelectedTab][entityNameExtracted]; !ok {
+			leftMargin := "\n\n"
+
+			if i == 0 && len(self.SqlWidget.Text) == 0 {
+				leftMargin = ""
+			}
+
+			generatedSql += leftMargin + self.generateSqlFor(currentlySelectedTab, entityRow)
+
+			self.alreadyRenderedEntities[currentlySelectedTab][entityNameExtracted] = true
+		}
+	}
+
+	if self.SqlWidget.Text != "" {
+		self.SqlWidget.Text += "\n\n" + generatedSql
+	} else {
+		self.SqlWidget.Text += generatedSql
+	}
+}
+
 // HandleActionOnEnter Handle every case scenario of pressing the "action button" in any state of the app.
 // It may sound obvious but this doesn't render anything. It just changes the state that the Render method relies on.
 func (self *PatchiRenderer) HandleActionOnEnter() {
@@ -192,39 +278,20 @@ func (self *PatchiRenderer) HandleActionOnEnter() {
 		// type (table, column, ..etc.)
 
 		currentlySelectedTab := getTabNameBasedOnIndex(self.TabPaneWidget.ActiveTabIndex) // tables, columns, views, ..
-		currentlySelectedEntityName := utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "\\[(.*?)\\]")[0] // the name of the table or column..etc
+		// For columns, this value would be `users -> email`
+		currentlySelectedEntityNameExtracted := utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "\\[(.*?)\\]")[0]
 
-		if ok, _ := self.alreadyRenderedEntities[currentlySelectedEntityName]; !ok { // Check if we already generated the SQL for this entity.
-			// This is the status of the entity (created, deleted, modified)
-			entityStatus := utils.ExtractExpressions(self.DiffWidget.Rows[self.DiffWidget.SelectedRow], "fg:(.*?)\\)")[0]
-			if entityStatus == "green" {
-				entityStatus = "created"
-			} else if entityStatus == "red" {
-				entityStatus = "deleted"
+		if ok, _ := self.alreadyRenderedEntities[currentlySelectedTab][currentlySelectedEntityNameExtracted]; !ok { // Check if we already generated the SQL for this entity.
+
+			generatedSql := self.generateSqlFor(currentlySelectedTab, self.DiffWidget.Rows[self.DiffWidget.SelectedRow]) // Give the full row.
+
+			if self.SqlWidget.Text != "" {
+				self.SqlWidget.Text += "\n\n" + generatedSql
+			} else {
+				self.SqlWidget.Text += generatedSql
 			}
 
-			dialect := self.params.FirstDb.Info.Dialect
-
-			var generatedSql string
-			if currentlySelectedTab == "tables" {
-				generatedSql = sequelizer.GenerateSqlForTables(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, currentlySelectedEntityName, entityStatus)
-			} else if currentlySelectedTab == "columns" {
-				// Since the `currentlySelectedEntityName` for columns contain a "tableName → columnName" pattern.
-				// We need to extract the table name and column name using regex first.
-				extractedExpressions := strings.Fields(currentlySelectedEntityName)
-				tableName := extractedExpressions[0]
-				columnName := extractedExpressions[2]
-
-				var errMsg safego.Option[string]
-				generatedSql, errMsg = sequelizer.GenerateSqlForColumns(self.params.FirstDb, self.params.SecondDb, dialect, columnName, tableName, entityStatus)
-				if errMsg.IsSome() {
-					self.alert(errMsg.Unwrap())
-				}
-			}
-
-			self.SqlWidget.Text += generatedSql + "\n\n"
-
-			self.alreadyRenderedEntities[currentlySelectedEntityName] = true
+			self.alreadyRenderedEntities[currentlySelectedTab][currentlySelectedEntityNameExtracted] = true
 		}
 	} else if self.FocusedWidget == self.SqlWidget {
 		if self.SqlWidget.Text == "" { // No SQL is generated.
