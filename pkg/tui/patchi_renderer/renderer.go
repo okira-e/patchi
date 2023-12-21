@@ -175,6 +175,7 @@ func (self *PatchiRenderer) ToggleHelpWidget() {
 	}
 }
 
+// generateSqlFor is responsible for generating SQL for anything in the database (tables, columns, etc.)
 func (self *PatchiRenderer) generateSqlFor(entityType string, entityRow string) string {
 	// This is the status of the entity (created, deleted, modified)
 	entityStatus := utils.ExtractExpressions(entityRow, "fg:(.*?)\\)")[0]
