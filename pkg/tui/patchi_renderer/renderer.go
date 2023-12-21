@@ -209,6 +209,8 @@ func (self *PatchiRenderer) generateSqlFor(entityType string, entityRow string) 
 			self.alert(errMsg.Unwrap())
 		}
 
+	} else if entityType == "views" {
+		// utils.AbortTui(entityName + " : " + entityType)
 	}
 
 	return generatedSql
@@ -337,7 +339,7 @@ func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 
 		if self.TabPaneWidget.ActiveTabIndex == 0 { // Tables
 			// Get the diff data for the current tab that we're on.
-			diffResult := difftool.GetTablesDiff(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, self.params.FirstDb.Info.Dialect)
+			diffResult := difftool.GetTablesDiff(self.params.FirstDb, self.params.SecondDb, self.params.FirstDb.Info.Dialect)
 
 			numberOfChangesForEachTabToBeLoggedToUser = len(diffResult)
 
@@ -376,6 +378,22 @@ func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 			}
 
 		} else if self.TabPaneWidget.ActiveTabIndex == 2 { // Views
+
+			diffResult := difftool.GetViewsDiff(self.params.FirstDb, self.params.SecondDb, self.params.FirstDb.Info.Dialect)
+
+			numberOfChangesForEachTabToBeLoggedToUser = len(diffResult)
+
+			for _, viewDiff := range diffResult {
+				text := "[" + viewDiff.ViewName + "]"
+				if viewDiff.DiffType == 1 {
+					text += "(fg:green)"
+				} else if viewDiff.DiffType == 0 {
+					text += "(fg:red)"
+				}
+
+				self.DiffWidget.Rows = append(self.DiffWidget.Rows, text)
+				self.tabsData[self.TabPaneWidget.ActiveTabIndex].data = self.DiffWidget.Rows
+			}
 
 		} else if self.TabPaneWidget.ActiveTabIndex == 3 { // Procedures
 
