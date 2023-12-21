@@ -99,6 +99,7 @@ func RenderTui(params *patchi_renderer.PatchiRendererParams) {
 			case *widgets.List:
 				if len(patchiRenderer.FocusedWidget.(*widgets.List).Rows) != 0 {
 					patchiRenderer.FocusedWidget.(*widgets.List).ScrollDown()
+					patchiRenderer.ResetMsgBar()
 					patchiRenderer.RenderWidgets(safego.None[string]())
 				}
 			}
@@ -108,6 +109,7 @@ func RenderTui(params *patchi_renderer.PatchiRendererParams) {
 			case *widgets.List:
 				if len(patchiRenderer.FocusedWidget.(*widgets.List).Rows) != 0 {
 					patchiRenderer.FocusedWidget.(*widgets.List).ScrollUp()
+					patchiRenderer.ResetMsgBar()
 					patchiRenderer.RenderWidgets(safego.None[string]())
 				}
 			}

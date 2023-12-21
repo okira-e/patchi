@@ -227,7 +227,7 @@ func (self *PatchiRenderer) HandleActionOnEnter() {
 			self.alreadyRenderedEntities[currentlySelectedEntityName] = true
 		}
 	} else if self.FocusedWidget == self.SqlWidget {
-		if self.SqlWidget.Text == "" { // List of entities is empty.
+		if self.SqlWidget.Text == "" { // No SQL is generated.
 			return
 		}
 
@@ -364,6 +364,7 @@ func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 
 	if self.alertMsg.IsSome() {
 		self.MessageBarWidget.Text = self.alertMsg.UnwrapOr("")
+		self.alertMsg = safego.None[string]()
 	}
 
 	// Render the widgets.
