@@ -213,6 +213,14 @@ func (self *PatchiRenderer) generateSqlFor(entityType string, entityRow string) 
 
 		generatedSql = sequelizer.GenerateSqlForViews(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
 
+	} else if entityType == "procedures" {
+
+		generatedSql = sequelizer.GenerateSqlForProcedures(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+		
+	} else if entityType == "functions" {
+		
+		generatedSql = sequelizer.GenerateSqlForFunctions(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+
 	}
 
 	return generatedSql
@@ -399,7 +407,39 @@ func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 
 		} else if self.TabPaneWidget.ActiveTabIndex == 3 { // Procedures
 
+			diffResult := difftool.GetProceduresDiff(self.params.FirstDb, self.params.SecondDb, self.params.FirstDb.Info.Dialect)
+
+			numberOfChangesForEachTabToBeLoggedToUser = len(diffResult)
+
+			for _, viewDiff := range diffResult {
+				text := "[" + viewDiff.ProcedureName + "]"
+				if viewDiff.DiffType == 1 {
+					text += "(fg:green)"
+				} else if viewDiff.DiffType == 0 {
+					text += "(fg:red)"
+				}
+
+				self.DiffWidget.Rows = append(self.DiffWidget.Rows, text)
+				self.tabsData[self.TabPaneWidget.ActiveTabIndex].data = self.DiffWidget.Rows
+			}
+			
 		} else if self.TabPaneWidget.ActiveTabIndex == 4 { // Functions
+
+			diffResult := difftool.GetFunctionsDiff(self.params.FirstDb, self.params.SecondDb, self.params.FirstDb.Info.Dialect)
+
+			numberOfChangesForEachTabToBeLoggedToUser = len(diffResult)
+
+			for _, viewDiff := range diffResult {
+				text := "[" + viewDiff.FunctionName + "]"
+				if viewDiff.DiffType == 1 {
+					text += "(fg:green)"
+				} else if viewDiff.DiffType == 0 {
+					text += "(fg:red)"
+				}
+
+				self.DiffWidget.Rows = append(self.DiffWidget.Rows, text)
+				self.tabsData[self.TabPaneWidget.ActiveTabIndex].data = self.DiffWidget.Rows
+			}
 
 		} else if self.TabPaneWidget.ActiveTabIndex == 5 { // Triggers
 

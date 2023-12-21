@@ -30,7 +30,7 @@ func generateSqlForViewsMysql(firstDb *sql.DB, secondDb *sql.DB, viewName string
 		}
 
 		for rows.Next() {
-			var void any
+			var void string
 			err = rows.Scan(&viewName, &ret, &void, &void)
 			if err != nil {
 				utils.AbortTui("Error getting create view statement: " + err.Error())
