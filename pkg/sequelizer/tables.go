@@ -47,7 +47,7 @@ func generateSqlForTablesMysql(firstDb *sql.DB, secondDb *sql.DB, entityName str
 	return ret
 }
 
-// generateSqlForTablesPostgres is responsible for generating SQL for tables in Postgres.
+// generateSqlForTablesPostgres AI GENERATED DRAFT THAT ISN'T COMPLETE/CORRECT.
 func generateSqlForTablesPostgres(firstDb *sql.DB, secondDb *sql.DB, entityName string, status string) string {
 	var ret string
 

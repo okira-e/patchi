@@ -210,7 +210,9 @@ func (self *PatchiRenderer) generateSqlFor(entityType string, entityRow string) 
 		}
 
 	} else if entityType == "views" {
-		// utils.AbortTui(entityName + " : " + entityType)
+
+		generatedSql = sequelizer.GenerateSqlForViews(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+
 	}
 
 	return generatedSql
