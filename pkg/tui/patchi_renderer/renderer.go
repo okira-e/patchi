@@ -216,10 +216,14 @@ func (self *PatchiRenderer) generateSqlFor(entityType string, entityRow string) 
 	} else if entityType == "procedures" {
 
 		generatedSql = sequelizer.GenerateSqlForProcedures(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
-		
+
 	} else if entityType == "functions" {
-		
+
 		generatedSql = sequelizer.GenerateSqlForFunctions(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+
+	} else if entityType == "triggers" {
+
+		generatedSql = sequelizer.GenerateSqlForTriggers(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
 
 	}
 
@@ -422,7 +426,7 @@ func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 				self.DiffWidget.Rows = append(self.DiffWidget.Rows, text)
 				self.tabsData[self.TabPaneWidget.ActiveTabIndex].data = self.DiffWidget.Rows
 			}
-			
+
 		} else if self.TabPaneWidget.ActiveTabIndex == 4 { // Functions
 
 			diffResult := difftool.GetFunctionsDiff(self.params.FirstDb, self.params.SecondDb, self.params.FirstDb.Info.Dialect)
@@ -442,7 +446,21 @@ func (self *PatchiRenderer) RenderWidgets(userPrompt safego.Option[string]) {
 			}
 
 		} else if self.TabPaneWidget.ActiveTabIndex == 5 { // Triggers
+			diffResult := difftool.GetTriggersDiff(self.params.FirstDb, self.params.SecondDb, self.params.FirstDb.Info.Dialect)
 
+			numberOfChangesForEachTabToBeLoggedToUser = len(diffResult)
+
+			for _, triggerDiff := range diffResult {
+				text := "[" + triggerDiff.TriggerName + "]"
+				if triggerDiff.DiffType == 1 {
+					text += "(fg:green)"
+				} else if triggerDiff.DiffType == 0 {
+					text += "(fg:red)"
+				}
+
+				self.DiffWidget.Rows = append(self.DiffWidget.Rows, text)
+				self.tabsData[self.TabPaneWidget.ActiveTabIndex].data = self.DiffWidget.Rows
+			}
 		}
 
 		self.alertMsg = safego.None[string]()
