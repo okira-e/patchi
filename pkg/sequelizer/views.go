@@ -7,11 +7,11 @@ import (
 )
 
 // GenerateSqlForViews is the interface for generating SQL for views in general.
-func GenerateSqlForViews(firstDb *sql.DB, secondDb *sql.DB, dialect string, viewName string, status string) string {
+func GenerateSqlForViews(firstDb *sql.DB, dialect string, viewName string, status string) string {
 	var ret string
 
 	if dialect == "mysql" || dialect == "mariadb" {
-		ret = generateSqlForViewsMysql(firstDb, secondDb, viewName, status)
+		ret = generateSqlForViewsMysql(firstDb, viewName, status)
 	} else if dialect == "postgres" || dialect == "cockroachdb" {
 		utils.AbortTui("UNIMPLEMENTED")
 	}
@@ -20,7 +20,7 @@ func GenerateSqlForViews(firstDb *sql.DB, secondDb *sql.DB, dialect string, view
 }
 
 // generateSqlForViewsMysql is responsible for generating SQL for views in Mysql.
-func generateSqlForViewsMysql(firstDb *sql.DB, secondDb *sql.DB, viewName string, status string) string {
+func generateSqlForViewsMysql(firstDb *sql.DB, viewName string, status string) string {
 	var ret string
 
 	if status == "created" {
@@ -44,4 +44,3 @@ func generateSqlForViewsMysql(firstDb *sql.DB, secondDb *sql.DB, viewName string
 
 	return ret
 }
-

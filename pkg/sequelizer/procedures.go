@@ -7,11 +7,11 @@ import (
 )
 
 // GenerateSqlForProcedures is the interface for generating SQL for procedures in general.
-func GenerateSqlForProcedures(firstDb *sql.DB, secondDb *sql.DB, dialect string, procedureName string, status string) string {
+func GenerateSqlForProcedures(firstDb *sql.DB, dialect string, procedureName string, status string) string {
 	var ret string
 
 	if dialect == "mysql" || dialect == "mariadb" {
-		ret = generateSqlForProceduresMysql(firstDb, secondDb, procedureName, status)
+		ret = generateSqlForProceduresMysql(firstDb, procedureName, status)
 	} else if dialect == "postgres" || dialect == "cockroachdb" {
 		utils.AbortTui("UNIMPLEMENTED")
 	}
@@ -20,7 +20,7 @@ func GenerateSqlForProcedures(firstDb *sql.DB, secondDb *sql.DB, dialect string,
 }
 
 // generateSqlForProceduresMysql is responsible for generating SQL for procedures in Mysql.
-func generateSqlForProceduresMysql(firstDb *sql.DB, secondDb *sql.DB, procedureName string, status string) string {
+func generateSqlForProceduresMysql(firstDb *sql.DB, procedureName string, status string) string {
 	var ret string
 
 	if status == "created" {
@@ -44,4 +44,3 @@ func generateSqlForProceduresMysql(firstDb *sql.DB, secondDb *sql.DB, procedureN
 
 	return ret
 }
-

@@ -11,12 +11,12 @@ import (
 )
 
 // GenerateSqlForColumns generates the SQL for a column based on it's status (created or deleted.)
-func GenerateSqlForColumns(firstDb types.DbConnection, secondDb types.DbConnection, dialect string, columnName string, tableName string, status string) (string, safego.Option[string]) {
+func GenerateSqlForColumns(firstDb types.DbConnection, dialect string, columnName string, tableName string, status string) (string, safego.Option[string]) {
 	var ret string
 	errOpt := safego.None[string]()
 
 	if dialect == "mysql" || dialect == "mariadb" {
-		ret, errOpt = generateSqlForColumnsMysql(firstDb, secondDb, columnName, tableName, status)
+		ret, errOpt = generateSqlForColumnsMysql(firstDb, columnName, tableName, status)
 	} else if dialect == "postgres" || dialect == "cockroachdb" {
 		utils.AbortTui("UNIMPLEMENTED")
 	}
@@ -25,7 +25,7 @@ func GenerateSqlForColumns(firstDb types.DbConnection, secondDb types.DbConnecti
 }
 
 // UNFINISHED
-func generateSqlForColumnsMysql(firstDb types.DbConnection, secondDb types.DbConnection, columnName string, tableName string, status string) (string, safego.Option[string]) {
+func generateSqlForColumnsMysql(firstDb types.DbConnection, columnName string, tableName string, status string) (string, safego.Option[string]) {
 	var result string
 
 	if status == "deleted" {

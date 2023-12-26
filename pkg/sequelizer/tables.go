@@ -10,11 +10,11 @@ import (
 )
 
 // GenerateSqlForTables is the interface for generating SQL for tables in general.
-func GenerateSqlForTables(firstDb *sql.DB, secondDb *sql.DB, dialect string, entityName string, status string) string {
+func GenerateSqlForTables(firstDb *sql.DB, dialect string, entityName string, status string) string {
 	var ret string
 
 	if dialect == "mysql" || dialect == "mariadb" {
-		ret = generateSqlForTablesMysql(firstDb, secondDb, entityName, status)
+		ret = generateSqlForTablesMysql(firstDb, entityName, status)
 	} else if dialect == "postgres" || dialect == "cockroachdb" {
 		utils.AbortTui("UNIMPLEMENTED")
 	}
@@ -23,7 +23,7 @@ func GenerateSqlForTables(firstDb *sql.DB, secondDb *sql.DB, dialect string, ent
 }
 
 // generateSqlForTablesMysql is responsible for generating SQL for tables in Mysql.
-func generateSqlForTablesMysql(firstDb *sql.DB, secondDb *sql.DB, entityName string, status string) string {
+func generateSqlForTablesMysql(firstDb *sql.DB, entityName string, status string) string {
 	var ret string
 
 	if status == "created" {
@@ -48,7 +48,7 @@ func generateSqlForTablesMysql(firstDb *sql.DB, secondDb *sql.DB, entityName str
 }
 
 // generateSqlForTablesPostgres AI GENERATED DRAFT THAT ISN'T COMPLETE/CORRECT.
-func generateSqlForTablesPostgres(firstDb *sql.DB, secondDb *sql.DB, entityName string, status string) string {
+func generateSqlForTablesPostgres(firstDb *sql.DB, entityName string, status string) string {
 	var ret string
 
 	if status == "created" {

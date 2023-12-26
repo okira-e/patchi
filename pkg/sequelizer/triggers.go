@@ -7,11 +7,11 @@ import (
 )
 
 // GenerateSqlForTriggers is the interface for generating SQL for triggers in general.
-func GenerateSqlForTriggers(firstDb *sql.DB, secondDb *sql.DB, dialect string, triggerName string, status string) string {
+func GenerateSqlForTriggers(firstDb *sql.DB, dialect string, triggerName string, status string) string {
 	var ret string
 
 	if dialect == "mysql" || dialect == "mariadb" {
-		ret = generateSqlForTriggersMysql(firstDb, secondDb, triggerName, status)
+		ret = generateSqlForTriggersMysql(firstDb, triggerName, status)
 	} else if dialect == "postgres" || dialect == "cockroachdb" {
 		utils.AbortTui("UNIMPLEMENTED")
 	}
@@ -20,7 +20,7 @@ func GenerateSqlForTriggers(firstDb *sql.DB, secondDb *sql.DB, dialect string, t
 }
 
 // generateSqlForTriggersMysql is responsible for generating SQL for triggers in Mysql.
-func generateSqlForTriggersMysql(firstDb *sql.DB, secondDb *sql.DB, triggerName string, status string) string {
+func generateSqlForTriggersMysql(firstDb *sql.DB, triggerName string, status string) string {
 	var ret string
 
 	if status == "created" {

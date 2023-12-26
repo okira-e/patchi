@@ -1,4 +1,3 @@
-
 package sequelizer
 
 import (
@@ -8,11 +7,11 @@ import (
 )
 
 // GenerateSqlForFunctions is the interface for generating SQL for functions in general.
-func GenerateSqlForFunctions(firstDb *sql.DB, secondDb *sql.DB, dialect string, functionName string, status string) string {
+func GenerateSqlForFunctions(firstDb *sql.DB, dialect string, functionName string, status string) string {
 	var ret string
 
 	if dialect == "mysql" || dialect == "mariadb" {
-		ret = generateSqlForFunctionsMysql(firstDb, secondDb, functionName, status)
+		ret = generateSqlForFunctionsMysql(firstDb, functionName, status)
 	} else if dialect == "postgres" || dialect == "cockroachdb" {
 		utils.AbortTui("UNIMPLEMENTED")
 	}
@@ -21,7 +20,7 @@ func GenerateSqlForFunctions(firstDb *sql.DB, secondDb *sql.DB, dialect string, 
 }
 
 // generateSqlForFunctionsMysql is responsible for generating SQL for functions in Mysql.
-func generateSqlForFunctionsMysql(firstDb *sql.DB, secondDb *sql.DB, functionName string, status string) string {
+func generateSqlForFunctionsMysql(firstDb *sql.DB, functionName string, status string) string {
 	var ret string
 
 	if status == "created" {
@@ -45,4 +44,3 @@ func generateSqlForFunctionsMysql(firstDb *sql.DB, secondDb *sql.DB, functionNam
 
 	return ret
 }
-

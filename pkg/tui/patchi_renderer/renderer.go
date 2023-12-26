@@ -193,7 +193,7 @@ func (self *PatchiRenderer) generateSqlFor(entityType string, entityRow string) 
 	var generatedSql string
 	if entityType == "tables" {
 
-		generatedSql = sequelizer.GenerateSqlForTables(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+		generatedSql = sequelizer.GenerateSqlForTables(self.params.FirstDb.SqlConnection, dialect, entityName, entityStatus)
 
 	} else if entityType == "columns" {
 
@@ -204,26 +204,26 @@ func (self *PatchiRenderer) generateSqlFor(entityType string, entityRow string) 
 		columnName := extractedExpressions[2]
 
 		var errMsg safego.Option[string]
-		generatedSql, errMsg = sequelizer.GenerateSqlForColumns(self.params.FirstDb, self.params.SecondDb, dialect, columnName, tableName, entityStatus)
+		generatedSql, errMsg = sequelizer.GenerateSqlForColumns(self.params.FirstDb, dialect, columnName, tableName, entityStatus)
 		if errMsg.IsSome() {
 			self.alert(errMsg.Unwrap())
 		}
 
 	} else if entityType == "views" {
 
-		generatedSql = sequelizer.GenerateSqlForViews(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+		generatedSql = sequelizer.GenerateSqlForViews(self.params.FirstDb.SqlConnection, dialect, entityName, entityStatus)
 
 	} else if entityType == "procedures" {
 
-		generatedSql = sequelizer.GenerateSqlForProcedures(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+		generatedSql = sequelizer.GenerateSqlForProcedures(self.params.FirstDb.SqlConnection, dialect, entityName, entityStatus)
 
 	} else if entityType == "functions" {
 
-		generatedSql = sequelizer.GenerateSqlForFunctions(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+		generatedSql = sequelizer.GenerateSqlForFunctions(self.params.FirstDb.SqlConnection, dialect, entityName, entityStatus)
 
 	} else if entityType == "triggers" {
 
-		generatedSql = sequelizer.GenerateSqlForTriggers(self.params.FirstDb.SqlConnection, self.params.SecondDb.SqlConnection, dialect, entityName, entityStatus)
+		generatedSql = sequelizer.GenerateSqlForTriggers(self.params.FirstDb.SqlConnection, dialect, entityName, entityStatus)
 
 	}
 
