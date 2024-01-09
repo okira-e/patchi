@@ -4,6 +4,7 @@
 Patchi connects to 2 of your databases and shows you the differences between them. Useful for
 migrating database environments. It also generates a migration SQL script for you.
 
+![promo](./resources/patchi_promo.gif)
 
 ## Requirements
 - Go 1.18 or higher
